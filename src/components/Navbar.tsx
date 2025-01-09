@@ -21,6 +21,10 @@ const Navbar = () => {
 
   return (
     <header className="p-4 flex flex-col items-center">
+		<div className="flex justify-between items-center w-full">
+        <div>CMC</div>
+        <ThemeMenu />
+      </div>
       {showImage && (
         <div
           onTouchStart={handleTouchStart}
@@ -34,10 +38,7 @@ const Navbar = () => {
           />
         </div>
       )}
-      <div className="flex justify-between items-center w-full">
-        <div>CMC</div>
-        <ThemeMenu />
-      </div>
+      
     </header>
   );
 };
