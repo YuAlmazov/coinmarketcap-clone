@@ -112,13 +112,13 @@ const LogoPanel: React.FC = () => {
             transform: translateX(0);
           }
           25% {
-            transform: translateX(15%);
+            transform: translateX(50%);
           }
           50% {
             transform: translateX(0);
           }
           75% {
-            transform: translateX(-15%);
+            transform: translateX(-50%);
           }
         }
         .animate-sideToSide {
