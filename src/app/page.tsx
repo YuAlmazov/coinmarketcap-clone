@@ -54,7 +54,6 @@ export default async function Home({
 		<LogoPanel />
         <div className="max-w-7xl m-auto">
           {/* Здесь мы больше НЕ передаём новости, а просто вызываем компонент NewsCarousel */}
-          <NewsCarousel />
           <CoinsTable
             coins={data.Data} // текущая страница (серверная пагинация)
             allCoins={allCoins} // всё множество монет (для поиска)
