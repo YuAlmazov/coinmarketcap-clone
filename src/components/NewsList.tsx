@@ -50,7 +50,7 @@ const NewsList: React.FC<NewsListProps> = ({ news }) => {
               rel="noopener noreferrer"
               className="text-blue-500 text-sm underline"
             >
-              Читать далее
+              Read more
             </a>
           </div>
         ))}
