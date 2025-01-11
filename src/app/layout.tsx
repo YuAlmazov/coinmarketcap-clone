@@ -7,6 +7,8 @@ import '@mantine/charts/styles.css';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import Navbar from '@/components/Navbar';
 
+
+
 import { getLatestNews } from '../../services/news';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -27,6 +29,7 @@ export default async function RootLayout({
 		<html lang="en">
 			<head>
 				<ColorSchemeScript />
+				
 			</head>
 			<body className={inter.className}>
 				<MantineProvider>

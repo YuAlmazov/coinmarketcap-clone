@@ -26,7 +26,7 @@ const Navbar = () => {
     /**
      * Используем класс "sticky top-0 z-50" => меню закреплено при скролле
      */
-    <header className="sticky top-0 z-50 p-4 bg-white shadow-sm">
+    <header className="sticky top-0 z-50 p-4 shadow-sm">
       <div className="flex justify-between items-center">
         {/* CMC название/лого (текстом) */}
         <div className="text-xl font-bold tracking-wider text-gray-800">CMC</div>

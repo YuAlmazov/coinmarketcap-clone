@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import logo from './logo.png';
-
 /**
  * Логика «свайпа» (как раньше) + бегущая «пиксельная» надпись с анимацией,
  * теперь весь контент отцентрирован по вертикали.
@@ -56,7 +55,8 @@ const LogoPanel: React.FC = () => {
 
   return (
     // Обёртка на всю высоту экрана, чтобы центрировать вертикально
-    <div className=" flex flex-col items-center justify-center bg-white">
+    
+    <div className=" flex flex-col items-center justify-center">
       {/* Логотип со свайпом */}
       <div
         onTouchStart={handleTouchStart}
@@ -77,7 +77,7 @@ const LogoPanel: React.FC = () => {
       </div>
 
       {/* Анимированная «пиксельная» надпись + эффекты */}
-      <div className="relative overflow-hidden w-full h-16 bg-gray-100 flex items-center justify-center">
+      <div className="relative overflow-hidden w-full h-16 flex items-center justify-center">
         
         {/* Сам текст (крупный шрифт, моноширинный) */}
         <div
