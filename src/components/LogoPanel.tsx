@@ -1,11 +1,11 @@
-
-'use client';
+"use client";
 
 import React, { useState } from 'react';
 import logo from './logo.png';
 
 /**
- * Логика «свайпа» вынесена сюда:
+ * Логика «свайпа» (как раньше) + бегущая «пиксельная» надпись с анимацией,
+ * теперь весь контент отцентрирован по вертикали.
  */
 const LogoPanel: React.FC = () => {
   const [showImage, setShowImage] = useState(true);
@@ -15,6 +15,7 @@ const LogoPanel: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [transition, setTransition] = useState<'none' | string>('none');
 
+  // Логика свайпа логотипа
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     setStartX(event.touches[0].clientX);
     setIsDragging(true);
@@ -50,26 +51,110 @@ const LogoPanel: React.FC = () => {
   };
 
   if (!showImage) {
-    return null; // Если логотип «улетел» — ничего не рендерим
+    return null; // Если логотип «улетел» — не показываем ничего
   }
 
   return (
-    <div
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      className="my-4 flex justify-center"
-    >
-      <img
-        src={logo.src}
-        alt="Logo"
-        className="w-64 h-auto"
-        style={{
-          transform: `translateX(${currentX}px)`,
-          transition: transition,
-        }}
-        onTransitionEnd={handleTransitionEnd}
-      />
+    // Обёртка на всю высоту экрана, чтобы центрировать вертикально
+    <div className=" flex flex-col items-center justify-center bg-white">
+      {/* Логотип со свайпом */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="mb-6 flex justify-center"
+      >
+        <img
+          src={logo.src}
+          alt="Logo"
+          className="w-64 h-auto"
+          style={{
+            transform: `translateX(${currentX}px)`,
+            transition: transition,
+          }}
+          onTransitionEnd={handleTransitionEnd}
+        />
+      </div>
+
+      {/* Анимированная «пиксельная» надпись + эффекты */}
+      <div className="relative overflow-hidden w-full h-16 bg-gray-100 flex items-center justify-center">
+        {/* Сам текст (крупный шрифт, моноширинный) */}
+        <div
+          className="
+            relative inline-block 
+            font-mono text-3xl font-bold
+            text-blue-800
+            px-4
+            whitespace-nowrap
+            animate-sideToSide
+          "
+        >
+          https://coinmarketcrap.info/ спонсирован Litecoin
+
+          {/* Первый эффект: «молния» */}
+          <div className="absolute top-0 left-full animate-lightning text-yellow-500">
+            ⚡
+          </div>
+
+          {/* Второй эффект: «искры» */}
+          <div className="absolute bottom-0 left-full animate-sparks text-pink-500">
+            ✨
+          </div>
+        </div>
+      </div>
+
+      {/* Подключаем стили анимации через style-jsx (или глобальные) */}
+      <style jsx>{`
+        /* Движение текста из стороны в сторону */
+        @keyframes sideToSide {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(15%);
+          }
+          50% {
+            transform: translateX(0);
+          }
+          75% {
+            transform: translateX(-15%);
+          }
+        }
+        .animate-sideToSide {
+          animation: sideToSide 3s infinite ease-in-out;
+        }
+
+        /* Молния: прыгает и слегка вращается */
+        @keyframes lightning {
+          0%, 100% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 1;
+          }
+          50% {
+            transform: translate(-20px, -20px) rotate(20deg);
+            opacity: 0.6;
+          }
+        }
+        .animate-lightning {
+          animation: lightning 1s infinite ease-in-out;
+        }
+
+        /* Искры: колеблются в чуть ином ритме */
+        @keyframes sparks {
+          0%, 100% {
+            transform: translate(0, 0) scale(1) rotate(0);
+            opacity: 1;
+          }
+          50% {
+            transform: translate(10px, 10px) scale(1.2) rotate(15deg);
+            opacity: 0.7;
+          }
+        }
+        .animate-sparks {
+          animation: sparks 1.2s infinite ease-in-out;
+        }
+      `}</style>
     </div>
   );
 };

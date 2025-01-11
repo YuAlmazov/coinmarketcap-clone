@@ -190,6 +190,19 @@ export default function CoinsTable({
   );
 
   // -------------------------
+  // Закрепляем Litecoin (LTC) в самом верху
+  // -------------------------
+  const ltcIndex = baseCoins.findIndex(
+    (coin) =>
+      coin.CoinInfo.Name.toLowerCase() === 'ltc' ||
+      coin.CoinInfo.FullName.toLowerCase().includes('litecoin')
+  );
+  if (ltcIndex !== -1) {
+    const [ltcCoin] = baseCoins.splice(ltcIndex, 1);
+    baseCoins.unshift(ltcCoin);
+  }
+
+  // -------------------------
   // Пагинация
   // -------------------------
   const needClientSidePagination = showOnlyFavorites || q;
@@ -309,10 +322,24 @@ export default function CoinsTable({
       ? (page - 1) * 100 + (index + 1)
       : index + 1;
 
+    // Проверяем, не Litecoin ли это?
+    const isLitecoin =
+      coin.CoinInfo.Name.toLowerCase() === 'ltc' ||
+      coin.CoinInfo.FullName.toLowerCase().includes('litecoin');
+
+    // Задаём «модное»/«анимированное» оформление для Litecoin
+    const rowClass = isLitecoin
+      ? `
+        bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold
+        transition-all duration-300 
+        hover:scale-[1.02] hover:shadow-xl
+      `
+      : 'hover:bg-gray-100 cursor-pointer transition-colors';
+
     return (
       <Table.Tr
         key={coin.CoinInfo.Id}
-        className="hover:bg-gray-100 cursor-pointer transition-colors"
+        className={rowClass}
         onClick={() => {
           // Переход на страницу монеты без скролла
           router.push(`/coins/${coin.CoinInfo.Name}`, { scroll: false });
