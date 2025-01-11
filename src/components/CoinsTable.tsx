@@ -157,27 +157,25 @@ export default function CoinsTable({
   // Search handler
   // -------------------------
   const handleSearch = () => {
-    router.push('/');
+    // Важно: добавляем { scroll: false }!
+    router.push('/', { scroll: false });
     setSearchQuery(rawSearchValue.trim());
   };
 
   // -------------------------
   // Логика фильтрации монет
   // -------------------------
-  let baseCoins: CoinsData[] = coins; // По умолчанию берём текущую страницу (серверную)
+  let baseCoins: CoinsData[] = coins;
   const q = searchQuery.toLowerCase();
 
-  // Если включён «My Favorite» или есть запрос, переключаемся на allCoins (если есть)
   if ((showOnlyFavorites || q) && Array.isArray(allCoins) && allCoins.length > 0) {
     baseCoins = allCoins;
   }
 
-  // Фильтр по избранному
   if (showOnlyFavorites) {
     baseCoins = baseCoins.filter((c) => favorites.includes(c.CoinInfo.Id));
   }
 
-  // Фильтр по поиску
   if (q) {
     baseCoins = baseCoins.filter(
       (coin) =>
@@ -186,16 +184,15 @@ export default function CoinsTable({
     );
   }
 
-  // Убираем дубликаты (если вдруг данные пересекаются)
-  baseCoins = Array.from(new Map(
-    baseCoins.map((item) => [item.CoinInfo.Id, item])
-  ).values());
+  // Убираем возможные дубли (по CoinInfo.Id)
+  baseCoins = Array.from(
+    new Map(baseCoins.map((item) => [item.CoinInfo.Id, item])).values()
+  );
 
   // -------------------------
   // Пагинация
   // -------------------------
   const needClientSidePagination = showOnlyFavorites || q;
-
   let coinsToRender = baseCoins;
   let displayedTotal = total;
 
@@ -307,7 +304,6 @@ export default function CoinsTable({
   );
 
   const rows = coinsToRender.map((coin, index) => {
-    // Если нет «client-side» пагинации => серверная
     const isServerSide = !needClientSidePagination;
     const rowIndex = isServerSide
       ? (page - 1) * 100 + (index + 1)
@@ -317,7 +313,10 @@ export default function CoinsTable({
       <Table.Tr
         key={coin.CoinInfo.Id}
         className="hover:bg-gray-100 cursor-pointer transition-colors"
-        onClick={() => router.push(`/coins/${coin.CoinInfo.Name}`)}
+        onClick={() => {
+          // Переход на страницу монеты без скролла
+          router.push(`/coins/${coin.CoinInfo.Name}`, { scroll: false });
+        }}
       >
         {visibleColumns.map((col) => {
           switch (col.id) {
@@ -349,7 +348,7 @@ export default function CoinsTable({
             case 'name':
               return (
                 <Table.Td key="name" className="px-2 py-2">
-                  <Link href={`/coins/${coin.CoinInfo.Name}`}>
+                  <Link href={`/coins/${coin.CoinInfo.Name}`} scroll={false}>
                     <div className="flex items-center space-x-2">
                       <Image
                         src={`https://www.cryptocompare.com/${coin.CoinInfo.ImageUrl}`}
@@ -446,7 +445,8 @@ export default function CoinsTable({
 
         <button
           onClick={() => {
-            router.push('/');
+            // Переключаем фавориты без скролла
+            router.push('/', { scroll: false });
             setShowOnlyFavorites((prev) => !prev);
           }}
           className={`
@@ -468,7 +468,8 @@ export default function CoinsTable({
         total={displayedTotal}
         value={page}
         onChange={(p) => {
-          router.push(p === 1 ? '/' : `/?page=${p}`);
+          // При смене страницы не прокручиваем вверх
+          router.push(p === 1 ? '/' : `/?page=${p}`, { scroll: false });
         }}
         className="flex justify-center my-4"
       />
@@ -499,7 +500,7 @@ export default function CoinsTable({
         total={displayedTotal}
         value={page}
         onChange={(p) => {
-          router.push(p === 1 ? '/' : `/?page=${p}`);
+          router.push(p === 1 ? '/' : `/?page=${p}`, { scroll: false });
         }}
         className="flex justify-center my-4"
       />
