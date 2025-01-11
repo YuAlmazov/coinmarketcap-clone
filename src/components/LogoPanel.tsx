@@ -132,7 +132,7 @@ const LogoPanel: React.FC = () => {
           }
         }
         .animate-sideToSide {
-          animation: sideToSide 3s infinite ease-in-out;
+          animation: sideToSide  6s infinite ease-in-out;
         }
 
         /* Молния: прыгает и слегка вращается */
