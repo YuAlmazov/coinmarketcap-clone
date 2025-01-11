@@ -475,7 +475,7 @@ export default function CoinsTable({
       />
 
       <div className="overflow-x-auto relative border rounded-lg shadow-sm">
-        <Table striped highlightOnHover withBorder withColumnBorders>
+        <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
               {visibleColumns.map((col) => (
