@@ -201,9 +201,7 @@ export default function ExchangesTable({
   let displayedTotal = total;
 
   if (needClientSidePagination) {
-    // Вместо 50 используем 100, чтобы соответствовать «стандартному» количеству
     displayedTotal = Math.ceil(baseExchanges.length / 100);
-
     const startIndex = (page - 1) * 100;
     const endIndex = startIndex + 100;
     exchangesToRender = baseExchanges.slice(startIndex, endIndex);
@@ -310,9 +308,19 @@ export default function ExchangesTable({
   );
 
   const rows = exchangesToRender.map((ex, index) => {
-    // Для корректного счёта используем (page - 1) * 100 + (index + 1)
-    // даже при включённом поиске (client-side pagination).
+    // Индексируем (page - 1) * 100 + (index + 1)
     const rowIndex = (page - 1) * 100 + (index + 1);
+
+    // Определяем URL для логотипа (если есть ImageUrl)
+    let logoUrl = '';
+    if (ex.ImageUrl) {
+      if (ex.ImageUrl.startsWith('http://') || ex.ImageUrl.startsWith('https://')) {
+        logoUrl = ex.ImageUrl;
+      } else {
+        // Добавим префикс, если не указаны http/https
+        logoUrl = `https://www.cryptocompare.com${ex.ImageUrl}`;
+      }
+    }
 
     return (
       <Table.Tr
@@ -343,36 +351,52 @@ export default function ExchangesTable({
                   </button>
                 </Table.Td>
               );
+
             case 'index':
               return (
                 <Table.Td key="index" className="px-2 py-2 text-sm">
                   {rowIndex}
                 </Table.Td>
               );
+
             case 'name':
               return (
                 <Table.Td key="name" className="px-2 py-2">
-                  {ex.Name}
+                  <div className="flex items-center space-x-2">
+                    {/* Если есть лого, показываем его */}
+                    {logoUrl && (
+                      <img
+                        src={logoUrl}
+                        alt={ex.Name}
+                        className="w-6 h-6 object-contain"
+                      />
+                    )}
+                    <span>{ex.Name}</span>
+                  </div>
                 </Table.Td>
               );
+
             case 'country':
               return (
                 <Table.Td key="country" className="px-2 py-2">
                   {ex.Country || '—'}
                 </Table.Td>
               );
+
             case 'grade':
               return (
                 <Table.Td key="grade" className="px-2 py-2 text-center">
                   {ex.Grade || '—'}
                 </Table.Td>
               );
+
             case 'gradePoints':
               return (
                 <Table.Td key="gradePoints" className="px-2 py-2 text-right">
                   {ex.GradePoints || 0}
                 </Table.Td>
               );
+
             case 'affiliateUrl':
               return (
                 <Table.Td key="affiliateUrl" className="px-2 py-2">
@@ -397,6 +421,7 @@ export default function ExchangesTable({
                   )}
                 </Table.Td>
               );
+
             default:
               return null;
           }
