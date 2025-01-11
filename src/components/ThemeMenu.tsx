@@ -2,38 +2,45 @@
 
 import { ActionIcon, Menu, useMantineColorScheme } from '@mantine/core';
 import { IconMoon, IconSun } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import localforage from 'localforage';
 
+// Ключ для хранения в IndexedDB
 const THEME_KEY = 'theme_preferred_mode';
 
 const ThemeMenu = () => {
-  const [mounted, setMounted] = useState<boolean>(false);
   const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const [mounted, setMounted] = useState(false);
 
-  // При первом рендере пытаемся прочитать тему из IndexedDB
+  // -------------------------
+  // Считываем тему один раз при монтировании
+  // -------------------------
   useEffect(() => {
-    let isMounted = true;
+    let isActive = true;
     localforage.getItem<string>(THEME_KEY).then((storedTheme) => {
-      if (isMounted && storedTheme) {
+      if (isActive && storedTheme && storedTheme !== colorScheme) {
         setColorScheme(storedTheme);
       }
       setMounted(true);
     });
-
     return () => {
-      isMounted = false;
+      isActive = false;
     };
-  }, [setColorScheme]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // При смене темы записываем в IndexedDB
-  useEffect(() => {
-    if (mounted) {
-      localforage.setItem(THEME_KEY, colorScheme);
-    }
-  }, [colorScheme, mounted]);
+  // -------------------------
+  // Меняем тему и записываем в IndexedDB
+  // -------------------------
+  const handleChangeTheme = useCallback(
+    (theme: 'light' | 'dark') => {
+      setColorScheme(theme);
+      localforage.setItem(THEME_KEY, theme);
+    },
+    [setColorScheme]
+  );
 
-  // Пока не прочитали из IndexedDB, возвращаем пустой блок, чтобы не мигала тема
+  // Пока не смонтировались (ещё не знаем про StoredTheme) — не рендерим
   if (!mounted) {
     return <div className="w-[34px] h-[34px]" />;
   }
@@ -42,24 +49,20 @@ const ThemeMenu = () => {
     <Menu shadow="md" width={200}>
       <Menu.Target>
         <ActionIcon variant="outline" size="lg">
-          {colorScheme === 'dark' ? (
-            <IconMoon size={16} />
-          ) : (
-            <IconSun size={16} />
-          )}
+          {colorScheme === 'dark' ? <IconMoon size={16} /> : <IconSun size={16} />}
         </ActionIcon>
       </Menu.Target>
 
       <Menu.Dropdown>
         <Menu.Label>Theme</Menu.Label>
         <Menu.Item
-          onClick={() => setColorScheme('light')}
+          onClick={() => handleChangeTheme('light')}
           leftSection={<IconSun size={16} />}
         >
           Light
         </Menu.Item>
         <Menu.Item
-          onClick={() => setColorScheme('dark')}
+          onClick={() => handleChangeTheme('dark')}
           leftSection={<IconMoon size={16} />}
         >
           Dark

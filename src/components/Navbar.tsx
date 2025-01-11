@@ -80,7 +80,7 @@ const Navbar = () => {
           ${isOpen ? 'max-h-96 opacity-100 scale-y-100' : 'max-h-0 opacity-0 scale-y-95'}
         `}
       >
-        <nav className="bg-white w-full">
+        <nav className="w-full">
           <ul className="flex flex-col px-4 py-2 space-y-1">
             {menuItems.map((item) => (
               <li key={item.label}>
