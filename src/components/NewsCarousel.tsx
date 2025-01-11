@@ -1,17 +1,15 @@
-// coinmarketcap-clone/components/NewsCarousel.tsx
+'use client';
 
-'use client'; // Если используете Next.js 13+ ()
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Scrollbar, A11y } from 'swiper/modules';
 
-// Импорт базовых стилей Swiper (обязательно)
+// Импорт базовых стилей Swiper
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/scrollbar';
 
-// Импорт вашего типа новостей, если он лежит в services/news.ts
 import { CryptoNewsArticle } from '../../services/news';
 
 interface NewsCarouselProps {
@@ -19,42 +17,80 @@ interface NewsCarouselProps {
 }
 
 const NewsCarousel: React.FC<NewsCarouselProps> = ({ news }) => {
-  // Если новостей нет, просто отобразить сообщение
+  // Если нет новостей, выводим сообщение
   if (!news || news.length === 0) {
     return <div className="text-center mt-6">Нет новостей для отображения.</div>;
   }
 
   return (
-    <div className="w-full mx-auto mt-8">
-      <h2 className="text-xl font-bold mb-4 text-center">News</h2>
-      
+    <div className="w-full mx-auto mt-8 px-3 sm:px-6">
+      <h2 className="text-2xl font-semibold mb-5 text-center">News</h2>
+
+      {/*
+        -- Внимание! Для стилизации стрелок Swiper (на мобильных) 
+           используем глобальные классы .swiper-button-next и .swiper-button-prev.
+           Можно написать их и в виде <style jsx global> блока (Next.js), 
+           либо вынести в globals.css.
+      */}
+      <style jsx global>{`
+        /* Стиль стрелок навигации в стиле Apple (модерн) */
+        .swiper-button-next,
+        .swiper-button-prev {
+          top: auto;
+          bottom: 10px !important;
+          width: 2rem;
+          height: 2rem;
+          border-radius: 9999px; /* rounded-full */
+          background-color: rgba(255, 255, 255, 0.7);
+          color: #000;
+          font-weight: bold;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+          transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Hover-эффект — Apple-синий */
+        .swiper-button-next:hover,
+        .swiper-button-prev:hover {
+          background-color: rgba(255, 255, 255, 1);
+          color: #007aff; /* Apple-blue */
+        }
+
+        /* На более крупных экранах чуть смещаем вниз */
+        @media (min-width: 768px) {
+          .swiper-button-next,
+          .swiper-button-prev {
+            bottom: 20px !important;
+          }
+        }
+      `}</style>
+
       <Swiper
         modules={[Navigation, Pagination, Scrollbar, A11y]}
-        spaceBetween={24}          // Отступы между слайдами
-        slidesPerView={1}          // По умолчанию: 1 слайд
-        navigation                 // Стрелки переключения
-        
-        scrollbar={{ draggable: true }}  // Полоса прокрутки (необязательно)
+        spaceBetween={16}            // Отступы между слайдами
+        slidesPerView={1}           // По умолчанию 1 слайд на маленьких
+        navigation                  // Включаем стрелки переключения
+        scrollbar={{ draggable: true }}  // Полоса прокрутки
         breakpoints={{
-          // При 640px и выше
           640: {
             slidesPerView: 1,
+            spaceBetween: 20,
           },
-          // При 768px и выше
           768: {
             slidesPerView: 2,
+            spaceBetween: 24,
           },
-          // При 1024px и выше
           1024: {
             slidesPerView: 3,
+            spaceBetween: 24,
           },
         }}
       >
         {news.map((article) => (
           <SwiperSlide key={article.id}>
-            <div 
+            <div
               className="
-                p-4 bg-white rounded-md shadow-md 
+                p-4 bg-white rounded-xl shadow-md 
                 transition-transform duration-300 
                 hover:scale-105
               "
@@ -62,7 +98,8 @@ const NewsCarousel: React.FC<NewsCarouselProps> = ({ news }) => {
               <img
                 src={article.imageurl}
                 alt={article.title}
-                className="w-full h-36 object-cover rounded mb-2"
+                // Более чёткое изображение с ограничением по высоте
+                className="w-full max-h-52 object-cover rounded-md mb-3"
               />
               <h3 className="text-md font-semibold mb-1">{article.title}</h3>
               <p className="text-sm text-gray-700 mb-2">
@@ -72,7 +109,7 @@ const NewsCarousel: React.FC<NewsCarouselProps> = ({ news }) => {
                 href={article.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 text-sm underline"
+                className="text-blue-600 text-sm font-medium underline"
               >
                 Read more
               </a>

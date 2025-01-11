@@ -56,7 +56,7 @@ export default async function Home({
     }
 
     return (
-      <main className="py-8">
+      <main className="py-1">
         <div className="max-w-7xl m-auto">
 			<NewsCarousel news={news} />
           	<CoinsTable
