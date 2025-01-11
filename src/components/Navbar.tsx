@@ -31,7 +31,7 @@ const Navbar = () => {
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    // Если свайп больше 50px в любую сторону — «уезжаем» логотип за пределы
+    // Если свайп больше 50px — «улетаем» логотип за пределы
     if (Math.abs(currentX) > 50) {
       setTransition('transform 0.3s ease-out');
       if (currentX > 0) {
@@ -66,7 +66,12 @@ const Navbar = () => {
   ];
 
   return (
-    <header className="p-4 flex flex-col items-center bg-white shadow-sm">
+    /**
+     * Используем Tailwind-классы:
+     * sticky top-0 z-50  => элемент «прилипает» к верху страницы
+     * bg-white shadow-sm => фон и тень
+     */
+    <header className="sticky top-0 z-50 p-4 flex flex-col items-center bg-white shadow-sm">
       <div className="flex justify-between items-center w-full">
         {/* Блок слева: бренд / текст */}
         <div className="text-xl font-bold">CMC</div>
@@ -120,7 +125,7 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Меню (Mobile) — показываем, если гамбургер «isOpen» */}
+      {/* Меню (Mobile) — показывается, если гамбургер «isOpen» */}
       {isOpen && (
         <nav className="md:hidden bg-white w-full mt-3 border-t border-gray-200">
           <ul className="flex flex-col px-4 py-2 space-y-1">
