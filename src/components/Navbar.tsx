@@ -4,55 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { IconMenu2, IconX } from '@tabler/icons-react';
 import ThemeMenu from './ThemeMenu';
-import logo from './logo.png';
 
 const Navbar = () => {
   /**
-   * 1) Состояние отображения лого (showImage) + свайп-анимация
-   */
-  const [showImage, setShowImage] = useState(true);
-
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [transition, setTransition] = useState<'none' | string>('none');
-
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    setStartX(event.touches[0].clientX);
-    setIsDragging(true);
-    setTransition('none');
-  };
-
-  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const moveX = event.touches[0].clientX;
-    setCurrentX(moveX - startX);
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    // Если свайп больше 50px — «улетаем» логотип за пределы
-    if (Math.abs(currentX) > 50) {
-      setTransition('transform 0.3s ease-out');
-      if (currentX > 0) {
-        setCurrentX(300);
-      } else {
-        setCurrentX(-300);
-      }
-    } else {
-      setTransition('transform 0.3s ease-out');
-      setCurrentX(0);
-    }
-  };
-
-  const handleTransitionEnd = () => {
-    if (Math.abs(currentX) === 300) {
-      setShowImage(false);
-    }
-  };
-
-  /**
-   * 2) Адаптивное меню (гамбургер)
+   * 1) Адаптивное меню (гамбургер)
+   * (Логика «свайпа лого» убрана, т.к. она теперь в LogoPanel.tsx)
    */
   const [isOpen, setIsOpen] = useState(false);
 
@@ -67,18 +23,17 @@ const Navbar = () => {
 
   return (
     /**
-     * Используем Tailwind-классы:
-     * sticky top-0 z-50  => элемент «прилипает» к верху страницы
-     * bg-white shadow-sm => фон и тень
+     * Используем класс "sticky top-0 z-50" => меню закреплено при скролле
      */
-    <header className="sticky top-0 z-50 p-4 flex flex-col items-center bg-white shadow-sm">
-      <div className="flex justify-between items-center w-full">
-        {/* Блок слева: бренд / текст */}
+    <header className="sticky top-0 z-50 p-4 bg-white shadow-sm">
+      <div className="flex justify-between items-center">
+        {/* CMC название/лого (текстом) */}
         <div className="text-xl font-bold">CMC</div>
 
-        {/* Кнопка-гамбургер и ThemeMenu справа */}
+        {/* Справа: ThemeMenu и гамбургер */}
         <div className="flex items-center space-x-4">
           <ThemeMenu />
+          {/* Кнопка (гамбургер) */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-gray-600 hover:text-blue-600 focus:outline-none"
@@ -88,29 +43,8 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Если нужно показать логотип (с анимацией свайпа) */}
-      {showImage && (
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          className="my-4"
-        >
-          <img
-            src={logo.src}
-            alt="Logo"
-            className="w-64 h-auto"
-            style={{
-              transform: `translateX(${currentX}px)`,
-              transition: transition,
-            }}
-            onTransitionEnd={handleTransitionEnd}
-          />
-        </div>
-      )}
-
       {/* Меню (Desktop) */}
-      <nav className="hidden md:block">
+      <nav className="hidden md:block mt-2">
         <ul className="flex space-x-6">
           {menuItems.map((item) => (
             <li key={item.label}>
@@ -125,7 +59,7 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Меню (Mobile) — показывается, если гамбургер «isOpen» */}
+      {/* Меню (Mobile) — выпадающее */}
       {isOpen && (
         <nav className="md:hidden bg-white w-full mt-3 border-t border-gray-200">
           <ul className="flex flex-col px-4 py-2 space-y-1">

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 // import { getLatestNews } from '../../services/news';
 
 import NewsCarousel from '@/components/NewsCarousel';
+import LogoPanel from '@/components/LogoPanel';
 
 const fetchCoins = async (page: number = 0, limit: number = 100) => {
   const res = await fetch(
@@ -50,6 +51,7 @@ export default async function Home({
 
     return (
       <main className="py-1">
+		<LogoPanel />
         <div className="max-w-7xl m-auto">
           {/* Здесь мы больше НЕ передаём новости, а просто вызываем компонент NewsCarousel */}
           <NewsCarousel />
