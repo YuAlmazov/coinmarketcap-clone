@@ -7,7 +7,6 @@ import '@mantine/charts/styles.css';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import Navbar from '@/components/Navbar';
 
-import NewsList from '@/components/NewsList';
 import { getLatestNews } from '../../services/news';
 
 const inter = Inter({ subsets: ['latin'] });

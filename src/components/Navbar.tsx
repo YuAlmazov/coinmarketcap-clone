@@ -17,6 +17,7 @@ const Navbar = () => {
     { label: 'Our Team', href: '/team' },
     { label: 'News', href: '/news' },
     { label: 'Analytics', href: '/analytics' },
+    { label: 'Exchanges', href: '/exchanges' },
     { label: 'Video', href: '/video' },
     { label: 'Contact us', href: '/contact' },
   ];
@@ -28,7 +29,7 @@ const Navbar = () => {
     <header className="sticky top-0 z-50 p-4 bg-white shadow-sm">
       <div className="flex justify-between items-center">
         {/* CMC название/лого (текстом) */}
-        <div className="text-xl font-bold">CMC</div>
+        <div className="text-xl font-bold tracking-wider text-gray-800">CMC</div>
 
         {/* Справа: ThemeMenu и гамбургер */}
         <div className="flex items-center space-x-4">
@@ -36,7 +37,8 @@ const Navbar = () => {
           {/* Кнопка (гамбургер) */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-gray-600 hover:text-blue-600 focus:outline-none"
+            className="md:hidden text-gray-600 hover:text-blue-600 
+                       focus:outline-none transition-colors duration-300"
           >
             {isOpen ? <IconX size={24} /> : <IconMenu2 size={24} />}
           </button>
@@ -45,12 +47,22 @@ const Navbar = () => {
 
       {/* Меню (Desktop) */}
       <nav className="hidden md:block mt-2">
-        <ul className="flex space-x-6">
+        {/* Центрируем ссылки */}
+        <ul className="flex justify-center space-x-4">
           {menuItems.map((item) => (
             <li key={item.label}>
+              {/* Делаем «технологичный» стиль ссылок */}
               <Link
                 href={item.href}
-                className="text-gray-700 hover:text-blue-600 transition-colors"
+                className="
+                  px-3 py-2 rounded-md
+                  bg-gradient-to-r from-gray-700 via-gray-900 to-black
+                  text-white
+                  hover:from-blue-600 hover:via-blue-800 hover:to-purple-800
+                  transition-all duration-300
+                  shadow-md hover:shadow-xl
+                  transform hover:-translate-y-0.5
+                "
               >
                 {item.label}
               </Link>
@@ -59,16 +71,32 @@ const Navbar = () => {
         </ul>
       </nav>
 
-      {/* Меню (Mobile) — выпадающее */}
-      {isOpen && (
-        <nav className="md:hidden bg-white w-full mt-3 border-t border-gray-200">
+      {/* Меню (Mobile) — выпадающее с «высокотехнологичной» анимацией */}
+      <div
+        className={`
+          md:hidden mt-3 border-t border-gray-200 
+          overflow-hidden transition-all duration-500 ease-in-out
+          transform origin-top
+          ${isOpen ? 'max-h-96 opacity-100 scale-y-100' : 'max-h-0 opacity-0 scale-y-95'}
+        `}
+      >
+        <nav className="bg-white w-full">
           <ul className="flex flex-col px-4 py-2 space-y-1">
             {menuItems.map((item) => (
               <li key={item.label}>
+                {/* Применяем тот же стиль ссылок, но на всю ширину */}
                 <Link
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="block py-2 text-gray-700 hover:text-blue-600 transition-colors"
+                  className="
+                    block w-full text-center py-2
+                    rounded-md text-white
+                    bg-gradient-to-r from-gray-700 via-gray-900 to-black
+                    hover:from-blue-600 hover:via-blue-800 hover:to-purple-800
+                    shadow-md hover:shadow-xl
+                    transition-all duration-300
+                    transform hover:-translate-y-0.5
+                  "
                 >
                   {item.label}
                 </Link>
@@ -76,7 +104,7 @@ const Navbar = () => {
             ))}
           </ul>
         </nav>
-      )}
+      </div>
     </header>
   );
 };
