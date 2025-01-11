@@ -99,7 +99,7 @@ const LogoPanel: React.FC = () => {
           <div className="absolute right animate-sparks text-pink-100">
             ✨
           </div>
-               https://coinmarketcrap.info/ спонсирован Litecoin
+               https://coinmarketcrap.info/ sponsored by Litecoin
 
           {/* Первый эффект: «молния» */}
           <div className="absolute top-0 left-full animate-lightning text-yellow-500">
