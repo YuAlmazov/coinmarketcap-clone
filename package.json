@@ -16,7 +16,7 @@
     "@mantine/hooks": "^7.9.1",
     "@tabler/icons-react": "^3.3.0",
     "adminjs": "^7.8.13",
-    "dayjs": "^1.11.11",
+    "dayjs": "^1.11.13",
     "express": "^4.21.2",
     "localforage": "^1.10.0",
     "next": "14.2.3",

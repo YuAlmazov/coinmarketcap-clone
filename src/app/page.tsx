@@ -1,15 +1,13 @@
 /** 
  * Файл: app/coins/[name]/page.tsx
  */
-
 import { notFound } from 'next/navigation';
-import dayjs from 'dayjs';
+import dayjs from 'dayjs'; // Не забудьте установить пакет dayjs, если ещё не установлен
 import LogoPanel from '@/components/LogoPanel';
-import NewsCarousel from '@/components/NewsCarousel';
 import CoinsTable from '@/components/CoinsTable';
 import { CoinsResponse } from '@/types/coin';
 
-// УБРАЛИ весь импорт getLatestNews и любую связанную логику
+// УБРАЛИ импорт getLatestNews и любую связанную логику
 // import { getLatestNews } from '../../services/news';
 
 async function fetchCoins(page: number = 0, limit: number = 100) {
@@ -42,6 +40,9 @@ async function fetchCoin(name: string) {
   const res = await fetch(
     `https://min-api.cryptocompare.com/data/v2/histohour?fsym=${name}&tsym=USD&limit=24`
   );
+  if (!res.ok) {
+    throw new Error('Failed to fetch coin details');
+  }
   return res.json();
 }
 
@@ -64,19 +65,22 @@ export default async function Page({
       notFound();
     }
 
-    // Дополнительно (гипотетически) загружаем данные для графика
+    // Загружаем данные конкретной монеты для графика (если нужно)
     const coinDetails = await fetchCoin(name);
 
-    // Защищённое извлечение данных для графика
-    const chartData = coinDetails?.Data?.Data
-      ? coinDetails.Data.Data.map((item: any) => ({
-          date: dayjs(item.time * 1000).format('HH:mm'),
-          Price: item.high,
-        }))
-      : [];
+    // Безопасное извлечение данных:
+    // 1) Проверяем, что coinDetails вообще есть
+    // 2) Проверяем, что coinDetails.Data существует
+    // 3) Проверяем, что coinDetails.Data.Data — это массив
+    const rawArray = coinDetails?.Data?.Data;
+    let chartData: { date: string; Price: number }[] = [];
+    if (Array.isArray(rawArray)) {
+      chartData = rawArray.map((item: any) => ({
+        date: dayjs(item.time * 1000).format('HH:mm'),
+        Price: item.high,
+      }));
+    }
 
-    // Ниже можно передавать chartData в компонент (если он есть) 
-    // или выводить на странице. Для примера просто выводим в консоль:
     console.log('Chart data:', chartData);
 
     return (
@@ -84,6 +88,7 @@ export default async function Page({
         <LogoPanel />
 
         <div className="max-w-7xl m-auto">
+          {/* Пробрасываем данные в таблицу */}
           <CoinsTable
             coins={data.Data}         // текущая страница (серверная пагинация)
             allCoins={allCoins}       // всё множество монет (для поиска)
