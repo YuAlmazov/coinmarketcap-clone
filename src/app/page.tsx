@@ -83,9 +83,6 @@ export default async function Page({
       <main className="py-1">
         <LogoPanel />
 
-        {/* Компонент с новостями, если он нужен без пропсов */}
-        <NewsCarousel />
-
         <div className="max-w-7xl m-auto">
           <CoinsTable
             coins={data.Data}         // текущая страница (серверная пагинация)
