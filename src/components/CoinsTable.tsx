@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import localforage from 'localforage';
 import { CoinsData } from '@/types/coin';
 import {
   Pagination,
@@ -9,13 +10,13 @@ import {
   Popover,
   Drawer,
 } from '@mantine/core';
-import { IconSettings } from '@tabler/icons-react';
+import { IconSettings, IconStar, IconStarFilled } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// Конфигурация колонок
 const columnsConfig = [
+  { id: 'favorite', label: '', alwaysVisible: true },
   { id: 'index', label: '#', alwaysVisible: false },
   { id: 'name', label: 'Name', alwaysVisible: true },
   { id: 'price', label: 'Price', alwaysVisible: true },
@@ -29,8 +30,8 @@ const columnsConfig = [
 
 const MAX_MOBILE_COLUMNS = 4;
 
-// Ключ в localStorage для хранения выбранных пользователем колонок
-const STORAGE_KEY = 'userSelectedColumns';
+const STORAGE_KEY_COLUMNS = 'userSelectedColumns';
+const STORAGE_KEY_FAVORITES = 'favoriteCoins';
 
 interface Column {
   id: string;
@@ -54,13 +55,19 @@ function ColumnHeader({
   const [opened, setOpened] = useState(false);
 
   const handleGearClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // чтобы не срабатывал onClick на <Table.Tr>
+    e.stopPropagation();
     if (isMobile) {
       toggleDrawer();
     } else {
       setOpened((prev) => !prev);
     }
   };
+
+  if (col.id === 'favorite') {
+    return (
+      <div className="flex items-center justify-center w-full font-bold text-sm uppercase" />
+    );
+  }
 
   return (
     <Popover
@@ -74,7 +81,7 @@ function ColumnHeader({
         <div className="flex items-center justify-between w-full">
           <span>{col.label}</span>
           <button
-            className="ml-1 text-gray-400 hover:text-gray-600"
+            className="ml-1 text-gray-400 hover:text-gray-700"
             onClick={handleGearClick}
           >
             <IconSettings size={16} />
@@ -82,7 +89,6 @@ function ColumnHeader({
         </div>
       </Popover.Target>
 
-      {/* Поповер на ПК */}
       <Popover.Dropdown>
         <div className="flex flex-col gap-1">
           <div className="mb-1 font-semibold text-sm">Выбор колонок</div>
@@ -103,12 +109,9 @@ function ColumnHeader({
 }
 
 export default function CoinsTable({
-  // Текущие монеты (серверная пагинация)
-  coins,
-  // Все монеты (для глобального поиска)
-  allCoins,
-  // Число страниц (при отсутствии поиска)
-  total,
+  coins,      // Текущие монеты (серверная пагинация)
+  allCoins,   // Все монеты (по всем страницам)
+  total,      // Число страниц (при серверной пагинации)
 }: {
   coins: CoinsData[];
   allCoins?: CoinsData[];
@@ -120,75 +123,104 @@ export default function CoinsTable({
   const page = pageParam ? +pageParam : 1;
 
   // -------------------------
-  //  Поиск
+  // States: поиск / избранное
   // -------------------------
   const [rawSearchValue, setRawSearchValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredCoins, setFilteredCoins] = useState<CoinsData[]>(coins);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+
+  // -------------------------
+  // IndexedDB: favorites
+  // -------------------------
+  useEffect(() => {
+    localforage.getItem<string[]>(STORAGE_KEY_FAVORITES).then((stored) => {
+      if (stored && Array.isArray(stored)) {
+        setFavorites(stored);
+      }
+    });
+  }, []);
 
   useEffect(() => {
-    const q = searchQuery.trim().toLowerCase();
+    localforage.setItem(STORAGE_KEY_FAVORITES, favorites);
+  }, [favorites]);
 
-    if (!q) {
-      // Если нет поискового запроса
-      setFilteredCoins(coins);
-      return;
-    }
-
-    // Если есть запрос -> ищем по allCoins (или fallback = coins)
-    const source = Array.isArray(allCoins) && allCoins.length > 0 ? allCoins : coins;
-    const result = source.filter(
-      (coin) =>
-        coin.CoinInfo.FullName.toLowerCase().includes(q) ||
-        coin.CoinInfo.Name.toLowerCase().includes(q)
+  const toggleFavorite = (coinId: string) => {
+    setFavorites((prev) =>
+      prev.includes(coinId)
+        ? prev.filter((id) => id !== coinId)
+        : [...prev, coinId]
     );
+  };
 
-    // Удаляем дубли (если одна и та же монета встречается несколько раз)
-    // Считаем уникальность по CoinInfo.Id
-    const uniqueResult = Array.from(
-      new Map(result.map((item) => [item.CoinInfo.Id, item])).values()
-    );
-
-    setFilteredCoins(uniqueResult);
-  }, [searchQuery, coins, allCoins]);
-
+  // -------------------------
+  // Search handler
+  // -------------------------
   const handleSearch = () => {
-    router.push('/'); // Возвращаемся на первую страницу
+    router.push('/');
     setSearchQuery(rawSearchValue.trim());
   };
 
   // -------------------------
-  //  Пагинация
+  // Логика фильтрации монет
   // -------------------------
-  let coinsToRender = filteredCoins;
+  let baseCoins: CoinsData[] = coins; // По умолчанию берём текущую страницу (серверную)
+  const q = searchQuery.toLowerCase();
+
+  // Если включён «My Favorite» или есть запрос, переключаемся на allCoins (если есть)
+  if ((showOnlyFavorites || q) && Array.isArray(allCoins) && allCoins.length > 0) {
+    baseCoins = allCoins;
+  }
+
+  // Фильтр по избранному
+  if (showOnlyFavorites) {
+    baseCoins = baseCoins.filter((c) => favorites.includes(c.CoinInfo.Id));
+  }
+
+  // Фильтр по поиску
+  if (q) {
+    baseCoins = baseCoins.filter(
+      (coin) =>
+        coin.CoinInfo.FullName.toLowerCase().includes(q) ||
+        coin.CoinInfo.Name.toLowerCase().includes(q)
+    );
+  }
+
+  // Убираем дубликаты (если вдруг данные пересекаются)
+  baseCoins = Array.from(new Map(
+    baseCoins.map((item) => [item.CoinInfo.Id, item])
+  ).values());
+
+  // -------------------------
+  // Пагинация
+  // -------------------------
+  const needClientSidePagination = showOnlyFavorites || q;
+
+  let coinsToRender = baseCoins;
   let displayedTotal = total;
 
-  // При поиске «клиентская» пагинация
-  if (searchQuery) {
-    displayedTotal = Math.ceil(filteredCoins.length / 100);
+  if (needClientSidePagination) {
+    displayedTotal = Math.ceil(baseCoins.length / 100);
     const startIndex = (page - 1) * 100;
     const endIndex = startIndex + 100;
-    coinsToRender = filteredCoins.slice(startIndex, endIndex);
+    coinsToRender = baseCoins.slice(startIndex, endIndex);
   }
 
   // -------------------------
-  //  Управление выбранными колонками
+  // Выбранные колонки
   // -------------------------
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
 
-  // Загрузка из localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const fromStorage = localStorage.getItem(STORAGE_KEY);
+      const fromStorage = localStorage.getItem(STORAGE_KEY_COLUMNS);
       if (fromStorage) {
         const parsed = JSON.parse(fromStorage) as string[];
-        // Валидируем, чтобы не было «битых» колонок
         const validCols = parsed.filter((id) =>
           columnsConfig.some((col) => col.id === id && !col.alwaysVisible)
         );
         setSelectedColumns(validCols);
       } else {
-        // Если в localStorage пусто – включаем все «не alwaysVisible»
         const def = columnsConfig
           .filter((col) => !col.alwaysVisible)
           .map((col) => col.id);
@@ -197,17 +229,18 @@ export default function CoinsTable({
     }
   }, []);
 
-  // Сохранение в localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedColumns));
+      localStorage.setItem(STORAGE_KEY_COLUMNS, JSON.stringify(selectedColumns));
     }
   }, [selectedColumns]);
 
   // -------------------------
-  //  Определение «мобильности»
+  // Мобильный режим / Drawer
   // -------------------------
   const [windowWidth, setWindowWidth] = useState<number>(0);
+  const isMobile = windowWidth > 0 && windowWidth < 640;
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setWindowWidth(window.innerWidth);
@@ -216,17 +249,10 @@ export default function CoinsTable({
       return () => window.removeEventListener('resize', handleResize);
     }
   }, []);
-  const isMobile = windowWidth > 0 && windowWidth < 640;
 
-  // -------------------------
-  //  Drawer (мобильные настройки)
-  // -------------------------
   const [drawerOpened, setDrawerOpened] = useState(false);
   const toggleDrawer = () => setDrawerOpened((o) => !o);
 
-  // -------------------------
-  //  Ограничения при «сжатии»
-  // -------------------------
   useEffect(() => {
     if (isMobile) {
       enforceMobileLimit();
@@ -265,7 +291,7 @@ export default function CoinsTable({
       const alwaysCount = columnsConfig.filter((c) => c.alwaysVisible).length;
       const currentTotal = alwaysCount + selectedColumns.length;
       if (currentTotal >= MAX_MOBILE_COLUMNS) {
-        return; // Не даём выбрать «лишнюю» колонку
+        return;
       }
     }
     setSelectedColumns((prev) =>
@@ -274,116 +300,166 @@ export default function CoinsTable({
   };
 
   // -------------------------
-  //  Список «видимых» колонок
+  // Рендер таблицы
   // -------------------------
   const visibleColumns = columnsConfig.filter(
     (col) => col.alwaysVisible || selectedColumns.includes(col.id)
   );
 
-  // Генерация строк таблицы
-  const rows = coinsToRender.map((coin, index) => (
-    <Table.Tr
-      key={coin.CoinInfo.Id}
-      className="hover:bg-gray-50 cursor-pointer"
-      onClick={() => router.push(`/coins/${coin.CoinInfo.Name}`)}
-    >
-      {visibleColumns.map((col) => {
-        switch (col.id) {
-          case 'index':
-            return (
-              <Table.Td key="index">
-                {(page - 1) * 100 + (index + 1)}
-              </Table.Td>
-            );
-          case 'name':
-            return (
-              <Table.Td key="name">
-                <Link href={`/coins/${coin.CoinInfo.Name}`}>
-                  <div className="flex items-center space-x-2">
-                    <Image
-                      src={`https://www.cryptocompare.com/${coin.CoinInfo.ImageUrl}`}
-                      alt={coin.CoinInfo.Name}
-                      width={24}
-                      height={24}
-                    />
-                    <span className="max-w-[150px] truncate">
-                      {coin.CoinInfo.FullName}
-                    </span>
-                    <span>{coin.CoinInfo.Name}</span>
-                  </div>
-                </Link>
-              </Table.Td>
-            );
-          case 'price':
-            return (
-              <Table.Td key="price">
-                {coin.DISPLAY?.USD.PRICE ?? ''}
-              </Table.Td>
-            );
-          case 'hour1Change':
-            return (
-              <Table.Td key="hour1Change">
-                {coin.DISPLAY?.USD.CHANGEPCTHOUR ?? ''}
-              </Table.Td>
-            );
-          case 'hour24Change':
-            return (
-              <Table.Td key="hour24Change">
-                {coin.DISPLAY?.USD.CHANGEPCT24HOUR ?? ''}
-              </Table.Td>
-            );
-          case 'marketCap':
-            return (
-              <Table.Td key="marketCap">
-                {coin.DISPLAY?.USD.MKTCAP ?? ''}
-              </Table.Td>
-            );
-          case 'volume24':
-            return (
-              <Table.Td key="volume24">
-                {coin.DISPLAY?.USD.TOTALVOLUME24HTO ?? ''}
-              </Table.Td>
-            );
-          case 'supply':
-            return (
-              <Table.Td key="supply">
-                {coin.DISPLAY?.USD.SUPPLY ?? ''}
-              </Table.Td>
-            );
-          case 'last7Days':
-            return (
-              <Table.Td key="last7Days">
-                <Image
-                  src={`https://images.cryptocompare.com/sparkchart/${coin.CoinInfo.Name}/USD/latest.png`}
-                  alt=""
-                  height={35}
-                  width={150}
-                />
-              </Table.Td>
-            );
-          default:
-            return null;
-        }
-      })}
-    </Table.Tr>
-  ));
+  const rows = coinsToRender.map((coin, index) => {
+    // Если нет «client-side» пагинации => серверная
+    const isServerSide = !needClientSidePagination;
+    const rowIndex = isServerSide
+      ? (page - 1) * 100 + (index + 1)
+      : index + 1;
+
+    return (
+      <Table.Tr
+        key={coin.CoinInfo.Id}
+        className="hover:bg-gray-100 cursor-pointer transition-colors"
+        onClick={() => router.push(`/coins/${coin.CoinInfo.Name}`)}
+      >
+        {visibleColumns.map((col) => {
+          switch (col.id) {
+            case 'favorite':
+              return (
+                <Table.Td
+                  key="favorite"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-center"
+                >
+                  <button
+                    onClick={() => toggleFavorite(coin.CoinInfo.Id)}
+                    className="text-yellow-500 hover:scale-110 transition-transform"
+                  >
+                    {favorites.includes(coin.CoinInfo.Id) ? (
+                      <IconStarFilled size={20} />
+                    ) : (
+                      <IconStar size={20} />
+                    )}
+                  </button>
+                </Table.Td>
+              );
+            case 'index':
+              return (
+                <Table.Td key="index" className="px-2 py-2 text-sm">
+                  {rowIndex}
+                </Table.Td>
+              );
+            case 'name':
+              return (
+                <Table.Td key="name" className="px-2 py-2">
+                  <Link href={`/coins/${coin.CoinInfo.Name}`}>
+                    <div className="flex items-center space-x-2">
+                      <Image
+                        src={`https://www.cryptocompare.com/${coin.CoinInfo.ImageUrl}`}
+                        alt={coin.CoinInfo.Name}
+                        width={24}
+                        height={24}
+                      />
+                      <span className="max-w-[150px] truncate">
+                        {coin.CoinInfo.FullName}
+                      </span>
+                      <span className="text-gray-500 font-medium">
+                        {coin.CoinInfo.Name}
+                      </span>
+                    </div>
+                  </Link>
+                </Table.Td>
+              );
+            case 'price':
+              return (
+                <Table.Td key="price" className="px-2 py-2 text-right">
+                  {coin.DISPLAY?.USD.PRICE ?? ''}
+                </Table.Td>
+              );
+            case 'hour1Change':
+              return (
+                <Table.Td key="hour1Change" className="px-2 py-2 text-right">
+                  {coin.DISPLAY?.USD.CHANGEPCTHOUR ?? ''}
+                </Table.Td>
+              );
+            case 'hour24Change':
+              return (
+                <Table.Td key="hour24Change" className="px-2 py-2 text-right">
+                  {coin.DISPLAY?.USD.CHANGEPCT24HOUR ?? ''}
+                </Table.Td>
+              );
+            case 'marketCap':
+              return (
+                <Table.Td key="marketCap" className="px-2 py-2 text-right">
+                  {coin.DISPLAY?.USD.MKTCAP ?? ''}
+                </Table.Td>
+              );
+            case 'volume24':
+              return (
+                <Table.Td key="volume24" className="px-2 py-2 text-right">
+                  {coin.DISPLAY?.USD.TOTALVOLUME24HTO ?? ''}
+                </Table.Td>
+              );
+            case 'supply':
+              return (
+                <Table.Td key="supply" className="px-2 py-2 text-right">
+                  {coin.DISPLAY?.USD.SUPPLY ?? ''}
+                </Table.Td>
+              );
+            case 'last7Days':
+              return (
+                <Table.Td key="last7Days" className="px-2 py-2">
+                  <Image
+                    src={`https://images.cryptocompare.com/sparkchart/${coin.CoinInfo.Name}/USD/latest.png`}
+                    alt=""
+                    height={35}
+                    width={150}
+                  />
+                </Table.Td>
+              );
+            default:
+              return null;
+          }
+        })}
+      </Table.Tr>
+    );
+  });
 
   return (
     <>
-      {/* Поле ввода и кнопка "Search" */}
-      <div className="flex items-center justify-center gap-2 my-4">
+      {/* Поиск и кнопки */}
+      <div className="flex items-center justify-center flex-wrap gap-3 my-4">
         <input
           type="text"
           placeholder="Search by name..."
           value={rawSearchValue}
           onChange={(e) => setRawSearchValue(e.target.value)}
-          className="border px-2 py-1 rounded"
+          className="w-[200px] md:w-[300px] rounded-lg border border-gray-300 px-3 py-2 
+                     focus:outline-none focus:ring-2 focus:ring-blue-400
+                     shadow-sm transition-colors"
         />
         <button
           onClick={handleSearch}
-          className="bg-blue-500 text-white px-4 py-1 rounded"
+          className="bg-blue-600 text-white rounded-lg px-4 py-2 
+                     hover:bg-blue-700 focus:outline-none focus:ring-2 
+                     focus:ring-blue-400 shadow-md transition-colors"
         >
           Search
+        </button>
+
+        <button
+          onClick={() => {
+            router.push('/');
+            setShowOnlyFavorites((prev) => !prev);
+          }}
+          className={`
+            px-4 py-2 rounded-lg shadow-md transition-colors 
+            focus:outline-none focus:ring-2 focus:ring-blue-400
+            ${
+              showOnlyFavorites
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+            }
+          `}
+        >
+          My Favorite
         </button>
       </div>
 
@@ -397,9 +473,9 @@ export default function CoinsTable({
         className="flex justify-center my-4"
       />
 
-      <div className="overflow-x-auto relative">
-        <Table stickyHeader stickyHeaderOffset={0}>
-          <Table.Thead className="!top-0 bg-white z-10">
+      <div className="overflow-x-auto relative border rounded-lg shadow-sm">
+        <Table striped highlightOnHover withBorder withColumnBorders>
+          <Table.Thead>
             <Table.Tr>
               {visibleColumns.map((col) => (
                 <Table.Th key={col.id}>
@@ -428,7 +504,7 @@ export default function CoinsTable({
         className="flex justify-center my-4"
       />
 
-      {/* Drawer (меню выбора колонок) для мобильного */}
+      {/* Drawer (мобильный) */}
       <Drawer
         opened={drawerOpened && isMobile}
         onClose={toggleDrawer}
@@ -443,11 +519,8 @@ export default function CoinsTable({
             .filter((c) => !c.alwaysVisible)
             .map((c) => {
               const isChecked = selectedColumns.includes(c.id);
-
               const alwaysCount = columnsConfig.filter((cc) => cc.alwaysVisible).length;
               const currentTotal = alwaysCount + selectedColumns.length;
-              // Если уже выбрано 4 (учитывая alwaysVisible),
-              // а эта колонка ещё не выбрана => disabled
               const disabled = !isChecked && currentTotal >= MAX_MOBILE_COLUMNS;
 
               return (

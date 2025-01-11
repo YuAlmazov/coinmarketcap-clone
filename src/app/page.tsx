@@ -1,7 +1,9 @@
 import CoinsTable from '@/components/CoinsTable';
 import { CoinsResponse } from '@/types/coin';
 import { notFound } from 'next/navigation';
-
+import { getLatestNews } from '../../services/news';
+import NewsList from '@/components/NewsList';
+import NewsCarousel from '@/components/NewsCarousel';
 const fetchCoins = async (page: number = 0, limit: number = 100) => {
   const res = await fetch(
     `https://min-api.cryptocompare.com/data/top/totaltoptiervolfull?limit=${limit}&tsym=USD&page=${page}`
@@ -46,6 +48,8 @@ export default async function Home({
     //    Пример:
     const allCoins = await fetchAllCoins();
 
+	const news = await getLatestNews();
+
     // Если нет данных — 404
     if (!data?.Data?.length) {
       notFound();
@@ -54,11 +58,13 @@ export default async function Home({
     return (
       <main className="py-8">
         <div className="max-w-7xl m-auto">
-          <CoinsTable
-            coins={data.Data} // текущая страница (серверная пагинация)
-            allCoins={allCoins} // всё множество монет (для поиска)
-            total={Math.ceil(data.MetaData.Count / 100)}
-          />
+			<NewsCarousel news={news} />
+          	<CoinsTable
+            	coins={data.Data} // текущая страница (серверная пагинация)
+            	allCoins={allCoins} // всё множество монет (для поиска)
+           	 	total={Math.ceil(data.MetaData.Count / 100)}
+          	/>
+		
         </div>
       </main>
     );

@@ -7,6 +7,9 @@ import '@mantine/charts/styles.css';
 import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import Navbar from '@/components/Navbar';
 
+import NewsList from '@/components/NewsList';
+import { getLatestNews } from '../../services/news';
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -14,11 +17,13 @@ export const metadata: Metadata = {
 	description: 'CoinMarketCrap',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const news = await getLatestNews();
+	
 	return (
 		<html lang="en">
 			<head>

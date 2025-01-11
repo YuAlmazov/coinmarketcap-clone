@@ -3,12 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "dev": "node server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
-    
   },
   "dependencies": {
     "@adminjs/express": "^6.1.1",
@@ -20,15 +18,19 @@
     "adminjs": "^7.8.13",
     "dayjs": "^1.11.11",
     "express": "^4.21.2",
+    "localforage": "^1.10.0",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
-    "recharts": "2"
+    "recharts": "2",
+    "swiper": "^11.2.1"
   },
   "devDependencies": {
+    "@types/localforage": "^0.0.33",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/swiper": "^5.4.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
     "postcss": "^8.4.38",
@@ -37,7 +39,5 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
-  
   "type": "module"
-  
 }
