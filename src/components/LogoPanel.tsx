@@ -78,6 +78,7 @@ const LogoPanel: React.FC = () => {
 
       {/* Анимированная «пиксельная» надпись + эффекты */}
       <div className="relative overflow-hidden w-full h-16 bg-gray-100 flex items-center justify-center">
+        
         {/* Сам текст (крупный шрифт, моноширинный) */}
         <div
           className="
@@ -89,7 +90,16 @@ const LogoPanel: React.FC = () => {
             animate-sideToSide
           "
         >
-          https://coinmarketcrap.info/ спонсирован Litecoin
+            {/* Первый эффект: «молния» */}
+          <div className="absolute right animate-lightning text-yellow-100">
+            ⚡
+          </div>
+
+          {/* Второй эффект: «искры» */}
+          <div className="absolute right animate-sparks text-pink-100">
+            ✨
+          </div>
+               https://coinmarketcrap.info/ спонсирован Litecoin
 
           {/* Первый эффект: «молния» */}
           <div className="absolute top-0 left-full animate-lightning text-yellow-500">
