@@ -18,6 +18,7 @@ export default async function NewsPage() {
   return (
     <main className="py-1">
       <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold mb-4"></h1>
         {/* Отрисовываем карусель или список */}
         <NewsCarousel />
       </div>
