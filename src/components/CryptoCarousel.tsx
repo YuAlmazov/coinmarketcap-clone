@@ -4,7 +4,7 @@
 import React, { useState, useRef } from 'react';
 
 /**
- * Получить YouTube ID из ссылки вида https://www.youtube.com/watch?v=XYZ
+ * Получаем YouTube ID из ссылки вида https://www.youtube.com/watch?v=XYZ
  */
 function extractVideoId(watchLink: string) {
   try {
@@ -45,29 +45,37 @@ export default function CryptoCarousel({
   const video = validVideos[safeIndex];
   const videoId = extractVideoId(video.watchLink);
 
-  // 4) Свайп
+  // 4) Свайп/перетаскивание
   const containerRef = useRef<HTMLDivElement>(null);
   const [startX, setStartX] = useState<number | null>(null);
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // =========================
+  // Параметры для iframe (добавляем playsinline=1, rel=0)
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
+
+  // ------------------------
   // Обработчики свайпа
-  // =========================
-  const handlePointerDown = (e: React.TouchEvent | React.MouseEvent) => {
+  // ------------------------
+  const handlePointerDown = (
+    e: React.TouchEvent | React.MouseEvent
+  ) => {
     setIsDragging(true);
-    const x =
-      'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const x = 'touches' in e
+      ? e.touches[0].clientX
+      : (e as React.MouseEvent).clientX;
     setStartX(x);
     setTranslateX(0);
   };
 
-  const handlePointerMove = (e: React.TouchEvent | React.MouseEvent) => {
+  const handlePointerMove = (
+    e: React.TouchEvent | React.MouseEvent
+  ) => {
     if (!isDragging || startX == null) return;
-    const x =
-      'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const diff = x - startX;
-    setTranslateX(diff);
+    const x = 'touches' in e
+      ? e.touches[0].clientX
+      : (e as React.MouseEvent).clientX;
+    setTranslateX(x - startX);
   };
 
   const handlePointerUp = () => {
@@ -75,35 +83,26 @@ export default function CryptoCarousel({
     setIsDragging(false);
 
     const containerWidth = containerRef.current?.clientWidth || 0;
-    const threshold = containerWidth * 0.2; // 20% для перелистывания
+    const threshold = containerWidth * 0.2; // 20% ширины
 
     if (Math.abs(translateX) > threshold) {
       if (translateX < 0) handleNext();
       else handlePrev();
     }
-    // сбрасываем translateX
     setTranslateX(0);
   };
 
   const handlePrev = () => {
     setCurrentIndex((prev) =>
-      prev > 0 ? prev - 1 : validVideos.length - 1,
+      prev > 0 ? prev - 1 : validVideos.length - 1
     );
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) =>
-      prev < validVideos.length - 1 ? prev + 1 : 0,
+      prev < validVideos.length - 1 ? prev + 1 : 0
     );
   };
-
-  // =========================
-  // Формируем финальный src для iframe
-  //   Добавляем playsinline=1 и rel=0, чтобы 
-  //   в мобильных браузерах быстрее появлялось превью 
-  //   и при нажатии Play — действительно запускалось.
-  // =========================
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
 
   return (
     <div className="flex flex-col items-center space-y-4">
@@ -112,29 +111,34 @@ export default function CryptoCarousel({
         {video.title}
       </h2>
 
-      {/* Контейнер под iframe + overlay */}
+      {/* Контейнер для iframe + overlay */}
       <div
         ref={containerRef}
         className="relative w-[90vw] max-w-[600px] aspect-video"
       >
-        {/* =========================
-            Iframe видео
-           ========================= */}
+        {/* ================ iframe ================ */}
         <iframe
           src={iframeSrc}
-          loading="lazy"  // лениво загружаем => быстрее отображается превью
           className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          loading="lazy" 
+          allow="
+            accelerometer; 
+            autoplay; 
+            clipboard-write; 
+            encrypted-media; 
+            gyroscope; 
+            picture-in-picture; 
+            fullscreen
+          "
+          // Ключевые моменты для полноэкранного режима на мобилке
           allowFullScreen
+   
         />
 
-        {/* =========================
-            Overlay для свайпа
-           ========================= */}
+        {/* ================ overlay для свайпа ================ */}
         <div
           className="absolute inset-0"
           style={{
-            // overlay активен только при «зажатом» свайпе
             pointerEvents: isDragging ? 'auto' : 'none',
             background: 'transparent',
             touchAction: 'none',

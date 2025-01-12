@@ -1,9 +1,12 @@
 // ПУТЬ: src/app/video/page.tsx
-
 import React from 'react';
 import puppeteer from 'puppeteer';
 import CryptoCarousel from '../../components/CryptoCarousel';
 
+/**
+ * Запускаем Puppeteer, парсим YouTube по "crypto currency",
+ * возвращаем последние 50 роликов (title, watchLink).
+ */
 async function fetchTopCryptoVideos(limit = 50) {
   const browser = await puppeteer.launch({
     headless: true,
@@ -62,4 +65,5 @@ export default async function CryptoVideosPage() {
   );
 }
 
+// чтобы при каждом запросе парсить заново
 export const revalidate = 0;
