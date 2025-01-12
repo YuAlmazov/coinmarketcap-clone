@@ -1,3 +1,5 @@
+// src\components\CoinsTable.tsx
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -14,6 +16,9 @@ import { IconSettings, IconStar, IconStarFilled } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+// Импортируем наш GIF (либо используйте путь /poop.gif, если файл в public)
+import poopGif from '@/components/poop.gif';
 
 const columnsConfig = [
   { id: 'favorite', label: '', alwaysVisible: true },
@@ -377,6 +382,15 @@ export default function CoinsTable({
                 <Table.Td key="name" className="px-2 py-2">
                   <Link href={`/coins/${coin.CoinInfo.Name}`} scroll={false}>
                     <div className="flex items-center space-x-2">
+                      {/* Добавляем gif, если НЕ Litecoin */}
+                      {!isLitecoin && (
+                        <Image
+                          src={poopGif}
+                          alt="Poop"
+                          width={32}
+                          height={32}
+                        />
+                      )}
                       <Image
                         src={`https://www.cryptocompare.com/${coin.CoinInfo.ImageUrl}`}
                         alt={coin.CoinInfo.Name}
