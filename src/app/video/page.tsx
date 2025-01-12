@@ -4,10 +4,6 @@ import React from 'react';
 import puppeteer from 'puppeteer';
 import CryptoCarousel from '../../components/CryptoCarousel';
 
-/**
- * Запускаем Puppeteer, парсим YouTube по "crypto currency",
- * возвращаем последние 50 роликов (title, watchLink).
- */
 async function fetchTopCryptoVideos(limit = 50) {
   const browser = await puppeteer.launch({
     headless: true,
@@ -16,9 +12,10 @@ async function fetchTopCryptoVideos(limit = 50) {
 
   try {
     const page = await browser.newPage();
-    await page.goto('https://www.youtube.com/results?search_query=crypto+currency&sp=CAI%253D', {
-      waitUntil: 'domcontentloaded',
-    });
+    await page.goto(
+      'https://www.youtube.com/results?search_query=crypto+currency&sp=CAI%253D',
+      { waitUntil: 'domcontentloaded' },
+    );
 
     await page.waitForSelector('ytd-video-renderer');
 

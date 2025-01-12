@@ -51,17 +51,21 @@ export default function CryptoCarousel({
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  // =========================
   // Обработчики свайпа
+  // =========================
   const handlePointerDown = (e: React.TouchEvent | React.MouseEvent) => {
     setIsDragging(true);
-    const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const x =
+      'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     setStartX(x);
     setTranslateX(0);
   };
 
   const handlePointerMove = (e: React.TouchEvent | React.MouseEvent) => {
     if (!isDragging || startX == null) return;
-    const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const x =
+      'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const diff = x - startX;
     setTranslateX(diff);
   };
@@ -71,7 +75,7 @@ export default function CryptoCarousel({
     setIsDragging(false);
 
     const containerWidth = containerRef.current?.clientWidth || 0;
-    const threshold = containerWidth * 0.2; // 20% ширины для перелистывания
+    const threshold = containerWidth * 0.2; // 20% для перелистывания
 
     if (Math.abs(translateX) > threshold) {
       if (translateX < 0) handleNext();
@@ -82,12 +86,24 @@ export default function CryptoCarousel({
   };
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : validVideos.length - 1));
+    setCurrentIndex((prev) =>
+      prev > 0 ? prev - 1 : validVideos.length - 1,
+    );
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev < validVideos.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) =>
+      prev < validVideos.length - 1 ? prev + 1 : 0,
+    );
   };
+
+  // =========================
+  // Формируем финальный src для iframe
+  //   Добавляем playsinline=1 и rel=0, чтобы 
+  //   в мобильных браузерах быстрее появлялось превью 
+  //   и при нажатии Play — действительно запускалось.
+  // =========================
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?rel=0&playsinline=1`;
 
   return (
     <div className="flex flex-col items-center space-y-4">
@@ -96,39 +112,39 @@ export default function CryptoCarousel({
         {video.title}
       </h2>
 
-      {/* iframe (сам плеер). Под ним — overlay для свайпа. */}
+      {/* Контейнер под iframe + overlay */}
       <div
         ref={containerRef}
-        className="relative w-[90vw] max-w-[600px] aspect-video bg-gray-200"
+        className="relative w-[90vw] max-w-[600px] aspect-video"
       >
+        {/* =========================
+            Iframe видео
+           ========================= */}
         <iframe
-          src={`https://www.youtube.com/embed/${videoId}`}
+          src={iframeSrc}
+          loading="lazy"  // лениво загружаем => быстрее отображается превью
           className="w-full h-full"
-          allowFullScreen
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
         />
-        {/* 
-          Overlay поверх iframe для свайпа.
-          Пока isDragging = true, overlay заним. 100% площади.
-          Когда isDragging = false — overlay «прозрачен» для кликов (pointer-events: none).
-        */}
+
+        {/* =========================
+            Overlay для свайпа
+           ========================= */}
         <div
           className="absolute inset-0"
           style={{
-            // overlay видим только если пользователь «держит» палец/мышь
+            // overlay активен только при «зажатом» свайпе
             pointerEvents: isDragging ? 'auto' : 'none',
-            background: 'rgba(0,0,0,0)', // прозрачный фон
-            touchAction: 'none', // отключить жесты браузера
-            // сдвиг при свайпе
+            background: 'transparent',
+            touchAction: 'none',
             transform: `translateX(${translateX}px)`,
             transition: isDragging ? 'none' : 'transform 0.3s ease',
             cursor: isDragging ? 'grabbing' : 'grab',
           }}
-          // Touch-события
           onTouchStart={handlePointerDown}
           onTouchMove={handlePointerMove}
           onTouchEnd={handlePointerUp}
-          // Mouse-события
           onMouseDown={handlePointerDown}
           onMouseMove={handlePointerMove}
           onMouseUp={handlePointerUp}
