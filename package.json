@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "npx puppeteer browsers install chrome",
     "dev": "node server.js",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "@adminjs/express": "^6.1.1",
