@@ -132,7 +132,7 @@ export default function CryptoCarousel({
           "
           // Ключевые моменты для полноэкранного режима на мобилке
           allowFullScreen
-   
+          {...{ 'webkitallowfullscreen': '', 'mozallowfullscreen': '' }}
         />
 
         {/* ================ overlay для свайпа ================ */}
