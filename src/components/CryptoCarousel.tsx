@@ -16,33 +16,41 @@ function extractVideoId(watchLink: string) {
 }
 
 /**
- * Компонент «карусель»: показываем 1 ролик по currentIndex,
- * стрелками «Prev»/«Next» переключаемся между роликами.
+ * Компонент «карусель»: показывает 1 ролик по currentIndex,
+ * стрелками «Prev»/«Next» переключается, *пропуская* «Invalid link».
  */
 export default function CryptoCarousel({
   videos,
 }: {
   videos: { title: string; watchLink: string }[];
 }) {
+  // 1) Фильтруем, убираем ролики с пустым videoId
+  const validVideos = videos.filter((v) => {
+    const videoId = extractVideoId(v.watchLink);
+    return videoId !== '';
+  });
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (!videos.length) {
-    return <div>No videos found.</div>;
+  // Если после фильтра ничего не осталось
+  if (!validVideos.length) {
+    return <div>No valid videos found.</div>;
   }
 
   // Безопасный индекс: вдруг currentIndex вышел за границу
-  const safeIndex = Math.max(0, Math.min(currentIndex, videos.length - 1));
-  const video = videos[safeIndex];
+  const safeIndex = Math.max(0, Math.min(currentIndex, validVideos.length - 1));
+  const video = validVideos[safeIndex];
+  // Уже точно не пустая, т.к. мы отфильтровали
   const videoId = extractVideoId(video.watchLink);
 
-  // Переключение «влево»
+  // Переключение «Prev»
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : videos.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : validVideos.length - 1));
   };
 
-  // Переключение «вправо»
+  // Переключение «Next»
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev < videos.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < validVideos.length - 1 ? prev + 1 : 0));
   };
 
   return (
@@ -54,17 +62,11 @@ export default function CryptoCarousel({
 
       {/* iframe (сам плеер) */}
       <div className="w-[90vw] max-w-[600px] aspect-video bg-gray-200">
-        {videoId ? (
-          <iframe
-            src={`https://www.youtube.com/embed/${videoId}`}
-            className="w-full h-full"
-            allowFullScreen
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full text-gray-500">
-            Invalid link
-          </div>
-        )}
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}`}
+          className="w-full h-full"
+          allowFullScreen
+        />
       </div>
 
       {/* Кнопки управления */}
@@ -85,7 +87,7 @@ export default function CryptoCarousel({
 
       {/* Номер ролика / всего */}
       <p className="text-sm text-gray-500">
-        Video {safeIndex + 1} / {videos.length}
+        Video {safeIndex + 1} / {validVideos.length}
       </p>
     </div>
   );

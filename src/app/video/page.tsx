@@ -1,4 +1,4 @@
-// ПУТЬ: src/app/cryptovideos/page.tsx
+// ПУТЬ: src/app/video/page.tsx
 
 import React from 'react';
 import puppeteer from 'puppeteer';
@@ -6,18 +6,18 @@ import CryptoCarousel from '../../components/CryptoCarousel';
 
 /**
  * Запускаем Puppeteer, парсим YouTube по "crypto currency",
- * возвращаем последние 10 роликов (title, watchLink).
+ * возвращаем последние 50 роликов (title, watchLink).
  */
 async function fetchTopCryptoVideos(limit = 10) {
   const browser = await puppeteer.launch({
-    headless: true, // или true, если у вас более старая версия Puppeteer
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    
   });
 
   try {
     const page = await browser.newPage();
-    // Примерный URL поиска по "crypto currency" (можно изменить фильтр)
+
+  // Примерный URL поиска по "crypto currency" (можно изменить фильтры)
     await page.goto('https://www.youtube.com/results?search_query=crypto+currency&sp=CAI%253D', {
       waitUntil: 'domcontentloaded',
     });
@@ -56,13 +56,13 @@ async function fetchTopCryptoVideos(limit = 10) {
 }
 
 export default async function CryptoVideosPage() {
-  // Парсим YouTube (серверный RSC)
-  const videos = await fetchTopCryptoVideos(10);
+  // Парсим YouTube (серверный RSC) => 50 роликов
+  const videos = await fetchTopCryptoVideos(50);
 
   return (
     <main className="p-4">
       <h1 className="text-center text-2xl font-bold my-4">
-        Crypto Videos Carousel
+        Crypto Videos Carousel (Top)
       </h1>
 
       <div className="max-w-4xl mx-auto">
@@ -73,5 +73,5 @@ export default async function CryptoVideosPage() {
   );
 }
 
-// Чтобы всегда парсить «свежие» данные, можно отключить кэш:
+// Чтобы всегда парсить «свежие» данные, можно отключить кэш (Next.js):
 export const revalidate = 0;
