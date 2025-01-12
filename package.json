@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "@adminjs/express": "^6.1.1",
