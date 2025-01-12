@@ -1,7 +1,7 @@
 // ПУТЬ: src/components/CryptoCarousel.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 /**
  * Получить YouTube ID из ссылки вида https://www.youtube.com/watch?v=XYZ
@@ -15,40 +15,87 @@ function extractVideoId(watchLink: string) {
   }
 }
 
-/**
- * Компонент «карусель»: показывает 1 ролик по currentIndex,
- * стрелками «Prev»/«Next» переключается, *пропуская* «Invalid link».
- */
 export default function CryptoCarousel({
   videos,
 }: {
   videos: { title: string; watchLink: string }[];
 }) {
-  // 1) Фильтруем, убираем ролики с пустым videoId
-  const validVideos = videos.filter((v) => {
-    const videoId = extractVideoId(v.watchLink);
-    return videoId !== '';
-  });
+  // 1) Убираем дубли по videoId
+  //    (Map: ключ = videoId, значение = { title, watchLink })
+  const uniqueById = new Map<string, { title: string; watchLink: string }>();
+  for (const v of videos) {
+    const id = extractVideoId(v.watchLink);
+    if (id) {
+      // Если уже есть, не записываем (дубликат)
+      if (!uniqueById.has(id)) {
+        uniqueById.set(id, v);
+      }
+    }
+  }
+  // Преобразуем обратно в массив
+  const uniqueVideos = Array.from(uniqueById.values());
 
+  // 2) Фильтруем «Invalid link» (no videoId)
+  const validVideos = uniqueVideos.filter((v) => extractVideoId(v.watchLink));
+
+  // 3) Состояние текущего ролика
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Если после фильтра ничего не осталось
   if (!validVideos.length) {
     return <div>No valid videos found.</div>;
   }
 
-  // Безопасный индекс: вдруг currentIndex вышел за границу
+  // Безопасный индекс
   const safeIndex = Math.max(0, Math.min(currentIndex, validVideos.length - 1));
   const video = validVideos[safeIndex];
-  // Уже точно не пустая, т.к. мы отфильтровали
   const videoId = extractVideoId(video.watchLink);
 
-  // Переключение «Prev»
+  // 4) Свайп / перетаскивание
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [startX, setStartX] = useState<number | null>(null);
+  const [translateX, setTranslateX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Обработчики свайпа
+  const handlePointerDown = (e: React.TouchEvent | React.MouseEvent) => {
+    setIsDragging(true);
+    const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    setStartX(x);
+    setTranslateX(0);
+  };
+
+  const handlePointerMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!isDragging || startX == null) return;
+    const x = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const diff = x - startX;
+    setTranslateX(diff);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const containerWidth = containerRef.current?.clientWidth || 0;
+    const threshold = containerWidth * 0.2; // 20% ширины для перелистывания
+
+    if (Math.abs(translateX) > threshold) {
+      // Перелистываем
+      if (translateX < 0) {
+        // свайп влево => Next
+        handleNext();
+      } else {
+        // свайп вправо => Prev
+        handlePrev();
+      }
+    }
+    // сбрасываем translateX
+    setTranslateX(0);
+  };
+
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : validVideos.length - 1));
   };
 
-  // Переключение «Next»
   const handleNext = () => {
     setCurrentIndex((prev) => (prev < validVideos.length - 1 ? prev + 1 : 0));
   };
@@ -60,13 +107,38 @@ export default function CryptoCarousel({
         {video.title}
       </h2>
 
-      {/* iframe (сам плеер) */}
-      <div className="w-[90vw] max-w-[600px] aspect-video bg-gray-200">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}`}
+      {/* iframe (сам плеер) + свайп */}
+      <div
+        className="w-[90vw] max-w-[600px] aspect-video bg-gray-200 overflow-hidden relative"
+        ref={containerRef}
+        // Touch-события
+        onTouchStart={handlePointerDown}
+        onTouchMove={handlePointerMove}
+        onTouchEnd={handlePointerUp}
+        // Mouse-события
+        onMouseDown={handlePointerDown}
+        onMouseMove={handlePointerMove}
+        onMouseUp={handlePointerUp}
+        onMouseLeave={() => isDragging && handlePointerUp()}
+        style={{
+          cursor: isDragging ? 'grabbing' : 'grab',
+        }}
+      >
+        {/* Сам iframe, но смещаем его при свайпе для "живого" эффекта */}
+        <div
           className="w-full h-full"
-          allowFullScreen
-        />
+          style={{
+            transform: `translateX(${translateX}px)`,
+            transition: isDragging ? 'none' : 'transform 0.3s ease',
+          }}
+        >
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}`}
+            className="w-full h-full pointer-events-none" 
+            // pointer-events:none => чтобы не мешал перетаскивать 
+            allowFullScreen
+          />
+        </div>
       </div>
 
       {/* Кнопки управления */}
