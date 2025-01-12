@@ -11,6 +11,7 @@ import CryptoCarousel from '../../components/CryptoCarousel';
 async function fetchTopCryptoVideos(limit = 10) {
   const browser = await puppeteer.launch({
     headless: true, // или true, если у вас более старая версия Puppeteer
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
     
   });
 
