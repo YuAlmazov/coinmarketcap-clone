@@ -19,7 +19,7 @@ const ThemeMenu = () => {
     let isActive = true;
     localforage.getItem<string>(THEME_KEY).then((storedTheme) => {
       if (isActive && storedTheme && storedTheme !== colorScheme) {
-        setColorScheme(storedTheme);
+        setColorScheme(storedTheme as 'light' | 'dark');
       }
       setMounted(true);
     });
