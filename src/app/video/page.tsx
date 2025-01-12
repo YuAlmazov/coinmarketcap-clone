@@ -16,8 +16,6 @@ async function fetchTopCryptoVideos(limit = 50) {
 
   try {
     const page = await browser.newPage();
-
-    // Примерный URL поиска по "crypto currency" (можно менять фильтры)
     await page.goto('https://www.youtube.com/results?search_query=crypto+currency&sp=CAI%253D', {
       waitUntil: 'domcontentloaded',
     });
@@ -35,7 +33,6 @@ async function fetchTopCryptoVideos(limit = 50) {
         const rawHref = titleEl?.getAttribute('href') || '';
         const title = titleEl?.textContent?.trim() || 'No title';
 
-        // Формируем рабочую ссылку
         const link = rawHref.startsWith('http')
           ? rawHref
           : `https://www.youtube.com${rawHref}`;
@@ -53,7 +50,6 @@ async function fetchTopCryptoVideos(limit = 50) {
 }
 
 export default async function CryptoVideosPage() {
-  // Парсим YouTube => 50 роликов
   const videos = await fetchTopCryptoVideos(50);
 
   return (
@@ -69,5 +65,4 @@ export default async function CryptoVideosPage() {
   );
 }
 
-// Чтобы всегда парсить «свежие» данные (Next.js):
 export const revalidate = 0;

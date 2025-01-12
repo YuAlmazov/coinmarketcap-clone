@@ -21,24 +21,19 @@ export default function CryptoCarousel({
   videos: { title: string; watchLink: string }[];
 }) {
   // 1) Убираем дубли по videoId
-  //    (Map: ключ = videoId, значение = { title, watchLink })
   const uniqueById = new Map<string, { title: string; watchLink: string }>();
   for (const v of videos) {
     const id = extractVideoId(v.watchLink);
-    if (id) {
-      // Если уже есть, не записываем (дубликат)
-      if (!uniqueById.has(id)) {
-        uniqueById.set(id, v);
-      }
+    if (id && !uniqueById.has(id)) {
+      uniqueById.set(id, v);
     }
   }
-  // Преобразуем обратно в массив
   const uniqueVideos = Array.from(uniqueById.values());
 
-  // 2) Фильтруем «Invalid link» (no videoId)
+  // 2) Фильтруем «Invalid link»
   const validVideos = uniqueVideos.filter((v) => extractVideoId(v.watchLink));
 
-  // 3) Состояние текущего ролика
+  // 3) Текущее видео
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!validVideos.length) {
@@ -50,7 +45,7 @@ export default function CryptoCarousel({
   const video = validVideos[safeIndex];
   const videoId = extractVideoId(video.watchLink);
 
-  // 4) Свайп / перетаскивание
+  // 4) Свайп
   const containerRef = useRef<HTMLDivElement>(null);
   const [startX, setStartX] = useState<number | null>(null);
   const [translateX, setTranslateX] = useState(0);
@@ -79,14 +74,8 @@ export default function CryptoCarousel({
     const threshold = containerWidth * 0.2; // 20% ширины для перелистывания
 
     if (Math.abs(translateX) > threshold) {
-      // Перелистываем
-      if (translateX < 0) {
-        // свайп влево => Next
-        handleNext();
-      } else {
-        // свайп вправо => Prev
-        handlePrev();
-      }
+      if (translateX < 0) handleNext();
+      else handlePrev();
     }
     // сбрасываем translateX
     setTranslateX(0);
@@ -107,38 +96,44 @@ export default function CryptoCarousel({
         {video.title}
       </h2>
 
-      {/* iframe (сам плеер) + свайп */}
+      {/* iframe (сам плеер). Под ним — overlay для свайпа. */}
       <div
-        className="w-[90vw] max-w-[600px] aspect-video bg-gray-200 overflow-hidden relative"
         ref={containerRef}
-        // Touch-события
-        onTouchStart={handlePointerDown}
-        onTouchMove={handlePointerMove}
-        onTouchEnd={handlePointerUp}
-        // Mouse-события
-        onMouseDown={handlePointerDown}
-        onMouseMove={handlePointerMove}
-        onMouseUp={handlePointerUp}
-        onMouseLeave={() => isDragging && handlePointerUp()}
-        style={{
-          cursor: isDragging ? 'grabbing' : 'grab',
-        }}
+        className="relative w-[90vw] max-w-[600px] aspect-video bg-gray-200"
       >
-        {/* Сам iframe, но смещаем его при свайпе для "живого" эффекта */}
-        <div
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}`}
           className="w-full h-full"
+          allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        />
+        {/* 
+          Overlay поверх iframe для свайпа.
+          Пока isDragging = true, overlay заним. 100% площади.
+          Когда isDragging = false — overlay «прозрачен» для кликов (pointer-events: none).
+        */}
+        <div
+          className="absolute inset-0"
           style={{
+            // overlay видим только если пользователь «держит» палец/мышь
+            pointerEvents: isDragging ? 'auto' : 'none',
+            background: 'rgba(0,0,0,0)', // прозрачный фон
+            touchAction: 'none', // отключить жесты браузера
+            // сдвиг при свайпе
             transform: `translateX(${translateX}px)`,
             transition: isDragging ? 'none' : 'transform 0.3s ease',
+            cursor: isDragging ? 'grabbing' : 'grab',
           }}
-        >
-          <iframe
-            src={`https://www.youtube.com/embed/${videoId}`}
-            className="w-full h-full pointer-events-none" 
-            // pointer-events:none => чтобы не мешал перетаскивать 
-            allowFullScreen
-          />
-        </div>
+          // Touch-события
+          onTouchStart={handlePointerDown}
+          onTouchMove={handlePointerMove}
+          onTouchEnd={handlePointerUp}
+          // Mouse-события
+          onMouseDown={handlePointerDown}
+          onMouseMove={handlePointerMove}
+          onMouseUp={handlePointerUp}
+          onMouseLeave={() => isDragging && handlePointerUp()}
+        />
       </div>
 
       {/* Кнопки управления */}
