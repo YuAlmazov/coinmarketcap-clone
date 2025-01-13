@@ -140,7 +140,7 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
                 src={sparkChartUrl}
                 alt="Sparkline"
                 height={35}
-                width={150}
+                width={130}
               />
             </Table.Td>
           </Table.Tr>
