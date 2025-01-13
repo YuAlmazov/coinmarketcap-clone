@@ -1,5 +1,3 @@
-// src\components\CoinsTable.tsx
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -16,10 +14,11 @@ import { IconSettings, IconStar, IconStarFilled } from '@tabler/icons-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-// Импортируем наш GIF (либо используйте путь /poop.gif, если файл в public)
 import poopGif from '@/components/poop.gif';
 
+// ---------------------------------------
+// ВНИМАНИЕ: columnsConfig остаётся прежним
+// ---------------------------------------
 const columnsConfig = [
   { id: 'favorite', label: '', alwaysVisible: true },
   { id: 'index', label: '#', alwaysVisible: false },
@@ -34,7 +33,6 @@ const columnsConfig = [
 ];
 
 const MAX_MOBILE_COLUMNS = 4;
-
 const STORAGE_KEY_COLUMNS = 'userSelectedColumns';
 const STORAGE_KEY_FAVORITES = 'favoriteCoins';
 
@@ -162,7 +160,6 @@ export default function CoinsTable({
   // Search handler
   // -------------------------
   const handleSearch = () => {
-    // Важно: добавляем { scroll: false }!
     router.push('/', { scroll: false });
     setSearchQuery(rawSearchValue.trim());
   };
@@ -189,23 +186,22 @@ export default function CoinsTable({
     );
   }
 
-  // Убираем возможные дубли (по CoinInfo.Id)
+  // Убираем возможные дубли
   baseCoins = Array.from(
     new Map(baseCoins.map((item) => [item.CoinInfo.Id, item])).values()
   );
 
-  // -------------------------
-  // Закрепляем Litecoin (LTC) в самом верху
-  // -------------------------
-  const ltcIndex = baseCoins.findIndex(
+  // --------------------------------------------------------
+  // УБРАЛИ блок, который раньше «закреплял» Litecoin вверху.
+  // ТЕПЕРЬ: Убираем LTC из массива, чтобы не рендерить его здесь.
+  // --------------------------------------------------------
+  baseCoins = baseCoins.filter(
     (coin) =>
-      coin.CoinInfo.Name.toLowerCase() === 'ltc' ||
-      coin.CoinInfo.FullName.toLowerCase().includes('litecoin')
+      !(
+        coin.CoinInfo.Name.toLowerCase() === 'ltc' ||
+        coin.CoinInfo.FullName.toLowerCase().includes('litecoin')
+      )
   );
-  if (ltcIndex !== -1) {
-    const [ltcCoin] = baseCoins.splice(ltcIndex, 1);
-    baseCoins.unshift(ltcCoin);
-  }
 
   // -------------------------
   // Пагинация
@@ -327,19 +323,8 @@ export default function CoinsTable({
       ? (page - 1) * 100 + (index + 1)
       : index + 1;
 
-    // Проверяем, не Litecoin ли это?
-    const isLitecoin =
-      coin.CoinInfo.Name.toLowerCase() === 'ltc' ||
-      coin.CoinInfo.FullName.toLowerCase().includes('litecoin');
-
-    // Задаём «модное»/«анимированное» оформление для Litecoin
-    const rowClass = isLitecoin
-      ? `
-        bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold
-        transition-all duration-300 
-        hover:scale-[1.02] hover:shadow-xl
-      `
-      : 'hover:bg-gray-100 cursor-pointer transition-colors';
+    // Убираем «особый» стиль для LTC, т.к. теперь его нет в основной таблице
+    const rowClass = 'hover:bg-gray-100 cursor-pointer transition-colors';
 
     return (
       <Table.Tr
@@ -382,15 +367,13 @@ export default function CoinsTable({
                 <Table.Td key="name" className="px-2 py-2">
                   <Link href={`/coins/${coin.CoinInfo.Name}`} scroll={false}>
                     <div className="flex items-center space-x-2">
-                      {/* Добавляем gif, если НЕ Litecoin */}
-                      {!isLitecoin && (
-                        <Image
-                          src={poopGif}
-                          alt="Poop"
-                          width={32}
-                          height={32}
-                        />
-                      )}
+                      {/* Добавляем poop.gif, если это не LTC (но LTC тут уже нет) */}
+                      <Image
+                        src={poopGif}
+                        alt="Poop"
+                        width={32}
+                        height={32}
+                      />
                       <Image
                         src={`https://www.cryptocompare.com/${coin.CoinInfo.ImageUrl}`}
                         alt={coin.CoinInfo.Name}
@@ -486,7 +469,6 @@ export default function CoinsTable({
 
         <button
           onClick={() => {
-            // Переключаем фавориты без скролла
             router.push('/', { scroll: false });
             setShowOnlyFavorites((prev) => !prev);
           }}
@@ -509,7 +491,6 @@ export default function CoinsTable({
         total={displayedTotal}
         value={page}
         onChange={(p) => {
-          // При смене страницы не прокручиваем вверх
           router.push(p === 1 ? '/' : `/?page=${p}`, { scroll: false });
         }}
         className="flex justify-center my-4"

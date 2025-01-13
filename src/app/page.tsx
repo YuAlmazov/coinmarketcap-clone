@@ -1,15 +1,16 @@
-/** 
- * Файл: app/coins/[name]/page.tsx
+/**
+ * Файл: src\app\page.tsx
  */
 import { notFound } from 'next/navigation';
-import dayjs from 'dayjs'; // Не забудьте установить пакет dayjs, если ещё не установлен
+import dayjs from 'dayjs';
 import LogoPanel from '@/components/LogoPanel';
 import CoinsTable from '@/components/CoinsTable';
+import LitecoinSingleTable from '@/components/LitecoinSingleTable';
 import { CoinsResponse } from '@/types/coin';
 
-// УБРАЛИ импорт getLatestNews и любую связанную логику
-// import { getLatestNews } from '../../services/news';
-
+// ----------------------
+// Вспомогательные функции
+// ----------------------
 async function fetchCoins(page: number = 0, limit: number = 100) {
   const res = await fetch(
     `https://min-api.cryptocompare.com/data/top/totaltoptiervolfull?limit=${limit}&tsym=USD&page=${page}`
@@ -35,63 +36,58 @@ async function fetchAllCoins() {
   return allData;
 }
 
-// Допустим, есть функция fetchCoin, которая подгружает детальные данные конкретной монеты
-async function fetchCoin(name: string) {
-  const res = await fetch(
-    `https://min-api.cryptocompare.com/data/v2/histohour?fsym=${name}&tsym=USD&limit=24`
-  );
-  if (!res.ok) {
-    throw new Error('Failed to fetch coin details');
-  }
-  return res.json();
-}
-
 export default async function Page({
-  params: { name },
   searchParams: { page },
 }: {
-  params: { name: string };
   searchParams: { page?: string };
 }) {
   const _page = page ? +page - 1 : 0;
 
   try {
-    // Данные для таблицы монет (пагинация)
+    // 1. Данные для таблицы монет (серверная пагинация)
     const data = await fetchCoins(_page);
+
+    // 2. Все монеты (для поиска)
     const allCoins = await fetchAllCoins();
 
-    // Если нет базовых данных по монетам — 404
+    // Если нет базовых данных — 404
     if (!data?.Data?.length) {
       notFound();
     }
 
-    // Загружаем данные конкретной монеты для графика (если нужно)
-    const coinDetails = await fetchCoin(name);
+    // ---------------------
+    // Выделяем Litecoin
+    // ---------------------
+    let litecoinData = null;
+    const ltcIndex = data.Data.findIndex((coin) => {
+      const name = coin.CoinInfo.Name.toLowerCase();
+      const full = coin.CoinInfo.FullName.toLowerCase();
+      return name === 'ltc' || full.includes('litecoin');
+    });
 
-    // Безопасное извлечение данных:
-    // 1) Проверяем, что coinDetails вообще есть
-    // 2) Проверяем, что coinDetails.Data существует
-    // 3) Проверяем, что coinDetails.Data.Data — это массив
-    const rawArray = coinDetails?.Data?.Data;
-    let chartData: { date: string; Price: number }[] = [];
-    if (Array.isArray(rawArray)) {
-      chartData = rawArray.map((item: any) => ({
-        date: dayjs(item.time * 1000).format('HH:mm'),
-        Price: item.high,
-      }));
+    if (ltcIndex > -1) {
+      // Вырезаем LTC из массива, чтобы он не мешал CoinsTable
+      [litecoinData] = data.Data.splice(ltcIndex, 1);
     }
 
-    console.log('Chart data:', chartData);
-
+    // ----------------------------------------------
+    // Рендерим
+    // ----------------------------------------------
     return (
       <main className="py-1">
+        {/* 1) Логотип + анимация */}
         <LogoPanel />
 
+        {/* 2) Отдельная табличка LTC (если нашлась) */}
         <div className="max-w-7xl m-auto">
-          {/* Пробрасываем данные в таблицу */}
+          <LitecoinSingleTable litecoinData={litecoinData} />
+        </div>
+
+        {/* 3) Общая таблица монет */}
+        <div className="max-w-7xl m-auto">
           <CoinsTable
-            coins={data.Data}         // текущая страница (серверная пагинация)
-            allCoins={allCoins}       // всё множество монет (для поиска)
+            coins={data.Data} // уже без LTC
+            allCoins={allCoins}
             total={Math.ceil(data.MetaData.Count / 100)}
           />
         </div>

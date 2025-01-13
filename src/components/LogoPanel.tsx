@@ -1,11 +1,11 @@
+// src\components\LogoPanel.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import localforage from 'localforage';
 import logo from './logo.png';
-/**
- * Логика «свайпа» (как раньше) + бегущая «пиксельная» надпись с анимацией,
- * теперь весь контент отцентрирован по вертикали.
- */
+import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
+
 const LogoPanel: React.FC = () => {
   const [showImage, setShowImage] = useState(true);
 
@@ -14,7 +14,27 @@ const LogoPanel: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [transition, setTransition] = useState<'none' | string>('none');
 
-  // Логика свайпа логотипа
+  // -----------------------------
+  //  Логика сердечка для LTC
+  // -----------------------------
+  const [ltcHeart, setLtcHeart] = useState(false);
+
+  useEffect(() => {
+    localforage.getItem<boolean>('ltcHeart').then((val) => {
+      if (typeof val === 'boolean') {
+        setLtcHeart(val);
+      }
+    });
+  }, []);
+
+  // Следим за изменениями, чтобы актуализировать в localforage
+  useEffect(() => {
+    localforage.setItem('ltcHeart', ltcHeart);
+  }, [ltcHeart]);
+
+  // -----------------------------
+  //  Логика свайпа логотипа
+  // -----------------------------
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     setStartX(event.touches[0].clientX);
     setIsDragging(true);
@@ -54,9 +74,7 @@ const LogoPanel: React.FC = () => {
   }
 
   return (
-    // Обёртка на всю высоту экрана, чтобы центрировать вертикально
-    
-    <div className=" flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center">
       {/* Логотип со свайпом */}
       <div
         onTouchStart={handleTouchStart}
@@ -76,7 +94,8 @@ const LogoPanel: React.FC = () => {
         />
       </div>
 
-  
+      {/* Тут показываем сердце — заполненное, если пользователь кликнул по нему в LitecoinSingleTable */}
+
     </div>
   );
 };
