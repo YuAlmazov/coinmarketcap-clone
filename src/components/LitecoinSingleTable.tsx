@@ -1,4 +1,3 @@
-// src\components\LitecoinSingleTable.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -7,19 +6,23 @@ import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { CoinsData } from '@/types/coin';
 import { Table } from '@mantine/core';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
 type Props = {
   litecoinData: CoinsData | null;
-  
 };
 
 /**
  * Отдельная таблица (без заголовков столбцов) 
- * для отображения именно Litecoin
+ * для отображения именно Litecoin.
+ * Адаптировано для мобильных устройств:
+ * - На узких экранах (< 640px) видны только:
+ *   сердечко, логотип + название, цена, график.
  */
 export default function LitecoinSingleTable({ litecoinData }: Props) {
   const [ltcLiked, setLtcLiked] = useState(false);
   const router = useRouter();
+
   // Считываем состояние «сердечка» для LTC из localforage
   useEffect(() => {
     localforage.getItem<boolean>('ltcHeart').then((val) => {
@@ -35,7 +38,7 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
   }, [ltcLiked]);
 
   const toggleHeart = (e: React.MouseEvent) => {
-    // чтобы клик по кнопке не вызывал переход куда-то ещё
+    // чтобы клик по иконке не вызывал переход
     e.stopPropagation();
     setLtcLiked((prev) => !prev);
   };
@@ -44,8 +47,7 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
     return null; // Если по какой-то причине нет данных по LTC
   }
 
-
-  // DISPLAY?.USD — могут быть undefined, поэтому безопасно проверяем
+  // Достаём данные (безопасно проверяем)
   const price = litecoinData.DISPLAY?.USD.PRICE ?? '';
   const hour1Change = litecoinData.DISPLAY?.USD.CHANGEPCTHOUR ?? '';
   const hour24Change = litecoinData.DISPLAY?.USD.CHANGEPCT24HOUR ?? '';
@@ -62,68 +64,81 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
   `;
 
   return (
-    <div className="mb-8"> 
-      <Table striped highlightOnHover>
+    <div className="mb-8 overflow-x-auto">
+      <Table striped highlightOnHover className="w-full table-auto">
         <Table.Tbody>
           <Table.Tr
-                  key={litecoinData.CoinInfo.Id}
-                  className={rowClass}
-                  onClick={() => {
-                    // Переход на страницу монеты без скролла
-                    router.push(`/coins/${litecoinData.CoinInfo.Name}`, { scroll: false });
-                  }}
-                >
-            {/* Слева — иконка сердечка + логотип LTC */}
-            <Table.Td onClick={(e) => e.stopPropagation()} className="px-2 py-2">
+            key={litecoinData.CoinInfo.Id}
+            className={rowClass}
+            onClick={() => {
+              // Переход на страницу монеты без скролла
+              router.push(`/coins/${litecoinData.CoinInfo.Name}`, { scroll: false });
+            }}
+          >
+            {/* Слева — иконка сердечка */}
+            <Table.Td
+              onClick={(e) => e.stopPropagation()}
+              className="px-2 py-2"
+            >
               <button
                 onClick={toggleHeart}
                 className="mr-2 text-red-500 hover:scale-110 transition-transform"
               >
                 {ltcLiked ? <IconHeartFilled size={20} /> : <IconHeart size={20} />}
               </button>
+            </Table.Td>
 
-              
-              </Table.Td>
-              <Table.Td className="px-2 py-2">
-              
-              
+            {/* Логотип + название (всегда видим) */}
+            <Table.Td className="px-2 py-2">
               <div className="flex items-center space-x-2">
-              <Image
-                src={`https://www.cryptocompare.com/${litecoinData.CoinInfo.ImageUrl}`}
-                alt={litecoinData.CoinInfo.Name}
-                width={24}
-                height={24}
-              />
-                {litecoinData.CoinInfo.FullName}
-                  
-                {litecoinData.CoinInfo.Name}
-                
+                <Image
+                  src={`https://www.cryptocompare.com/${litecoinData.CoinInfo.ImageUrl}`}
+                  alt={litecoinData.CoinInfo.Name}
+                  width={24}
+                  height={24}
+                />
+                <span>{litecoinData.CoinInfo.FullName}</span>
+                <span className="text-gray-800">
+                  {litecoinData.CoinInfo.Name}
+                </span>
               </div>
             </Table.Td>
 
-            {/* Цена */}
-            <Table.Td className="px-2 py-2 text-right">{price}</Table.Td>
+            {/* Цена (всегда видим) */}
+            <Table.Td className="px-2 py-2 text-right">
+              {price}
+            </Table.Td>
 
-            {/* 1h% */}
-            <Table.Td className="px-2 py-2 text-right">{hour1Change}</Table.Td>
+            {/* hour1Change — скрываем на мобильных (показываем только >=640px) */}
+            <Table.Td className="px-2 py-2 text-right hidden sm:table-cell">
+              {hour1Change}
+            </Table.Td>
 
-            {/* 24h% */}
-            <Table.Td className="px-2 py-2 text-right">{hour24Change}</Table.Td>
+            {/* hour24Change — скрываем на мобильных */}
+            <Table.Td className="px-2 py-2 text-right hidden sm:table-cell">
+              {hour24Change}
+            </Table.Td>
 
-            {/* Market Cap */}
-            <Table.Td className="px-2 py-2 text-right">{marketCap}</Table.Td>
+            {/* Market Cap — скрываем на мобильных */}
+            <Table.Td className="px-2 py-2 text-right hidden sm:table-cell">
+              {marketCap}
+            </Table.Td>
 
-            {/* Volume (24h) */}
-            <Table.Td className="px-2 py-2 text-right">{volume24}</Table.Td>
+            {/* Volume (24h) — скрываем на мобильных */}
+            <Table.Td className="px-2 py-2 text-right hidden sm:table-cell">
+              {volume24}
+            </Table.Td>
 
-            {/* Circulating Supply */}
-            <Table.Td className="px-2 py-2 text-right">{supply}</Table.Td>
+            {/* Circulating Supply — скрываем на мобильных */}
+            <Table.Td className="px-2 py-2 text-right hidden sm:table-cell">
+              {supply}
+            </Table.Td>
 
-            {/* Last 7 Days (sparkline) */}
+            {/* График (спарклайн) — показываем всегда */}
             <Table.Td className="px-2 py-2">
               <Image
                 src={sparkChartUrl}
-                alt=""
+                alt="Sparkline"
                 height={35}
                 width={150}
               />
