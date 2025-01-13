@@ -7,9 +7,10 @@ import { IconHeart, IconHeartFilled } from '@tabler/icons-react';
 import { CoinsData } from '@/types/coin';
 import { Table } from '@mantine/core';
 import Image from 'next/image';
-
+import { useRouter, useSearchParams } from 'next/navigation';
 type Props = {
   litecoinData: CoinsData | null;
+  
 };
 
 /**
@@ -18,7 +19,7 @@ type Props = {
  */
 export default function LitecoinSingleTable({ litecoinData }: Props) {
   const [ltcLiked, setLtcLiked] = useState(false);
-
+  const router = useRouter();
   // Считываем состояние «сердечка» для LTC из localforage
   useEffect(() => {
     localforage.getItem<boolean>('ltcHeart').then((val) => {
@@ -43,6 +44,7 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
     return null; // Если по какой-то причине нет данных по LTC
   }
 
+
   // DISPLAY?.USD — могут быть undefined, поэтому безопасно проверяем
   const price = litecoinData.DISPLAY?.USD.PRICE ?? '';
   const hour1Change = litecoinData.DISPLAY?.USD.CHANGEPCTHOUR ?? '';
@@ -54,7 +56,7 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
 
   // Стили аналогичны тому, как выделялась строка LTC в CoinsTable
   const rowClass = `
-    bg-gradient-to-r from-purple-600 to-pink-100 text-white font-semibold
+    bg-gradient-to-r cursor-pointer from-purple-600 to-pink-100 text-white font-semibold
     transition-all duration-300 
     hover:scale-[1.02] hover:shadow-xl
   `;
@@ -63,7 +65,14 @@ export default function LitecoinSingleTable({ litecoinData }: Props) {
     <div className="mb-8"> 
       <Table striped highlightOnHover>
         <Table.Tbody>
-          <Table.Tr className={rowClass}>
+          <Table.Tr
+                  key={litecoinData.CoinInfo.Id}
+                  className={rowClass}
+                  onClick={() => {
+                    // Переход на страницу монеты без скролла
+                    router.push(`/coins/${litecoinData.CoinInfo.Name}`, { scroll: false });
+                  }}
+                >
             {/* Слева — иконка сердечка + логотип LTC */}
             <Table.Td onClick={(e) => e.stopPropagation()} className="px-2 py-2">
               <button
