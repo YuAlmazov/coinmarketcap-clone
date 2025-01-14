@@ -80,7 +80,7 @@ export default async function Page({
 
         {/* 2) Отдельная табличка LTC (если нашлась) */}
         <div className="max-w-7xl m-auto">
-          <LitecoinSingleTable litecoinData={litecoinData} />
+          <LitecoinSingleTable initialLitecoinData={litecoinData} />
         </div>
 
         {/* 3) Общая таблица монет */}

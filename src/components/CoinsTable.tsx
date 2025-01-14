@@ -125,6 +125,45 @@ export default function CoinsTable({
   const pageParam = searchParams.get('page');
   const page = pageParam ? +pageParam : 1;
 
+  // === ADDED/CHANGED CODE ===
+  // Локальное состояние для "основных" монет, которые выводятся в таблицу
+  const [serverCoins, setServerCoins] = useState<CoinsData[]>(coins);
+
+  // Если props.coins вдруг меняется — подхватываем это
+  useEffect(() => {
+    setServerCoins(coins);
+  }, [coins]);
+
+  // Периодический рефетч каждые 30 секунд
+  useEffect(() => {
+    const fetchCoinsData = async () => {
+      try {
+        // В page.tsx у нас вычисляется page-1, здесь сделаем то же самое
+        const actualPage = page > 0 ? page - 1 : 0;
+        const res = await fetch(
+          `https://min-api.cryptocompare.com/data/top/totaltoptiervolfull?limit=100&tsym=USD&page=${actualPage}`
+        );
+        const json = await res.json();
+
+        if (json?.Data) {
+          setServerCoins(json.Data);
+        }
+      } catch (error) {
+        console.error('Coins refetch error:', error);
+      }
+    };
+
+    // Первый вызов — сразу, чтобы не ждать 30 секунд
+    fetchCoinsData();
+
+    // Каждые 30 секунд
+    const intervalId = setInterval(fetchCoinsData, 5_000);
+
+    // Очищаем интервал при размонтировании
+    return () => clearInterval(intervalId);
+  }, [page]);
+  // === /ADDED/CHANGED CODE ===
+
   // -------------------------
   // States: поиск / избранное
   // -------------------------
@@ -167,7 +206,11 @@ export default function CoinsTable({
   // -------------------------
   // Логика фильтрации монет
   // -------------------------
-  let baseCoins: CoinsData[] = coins;
+  // === ADDED/CHANGED CODE ===
+  // Вместо props.coins используем наш serverCoins (авторефреш)
+  let baseCoins: CoinsData[] = serverCoins;
+  // === /ADDED/CHANGED CODE ===
+
   const q = searchQuery.toLowerCase();
 
   if ((showOnlyFavorites || q) && Array.isArray(allCoins) && allCoins.length > 0) {
